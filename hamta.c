@@ -26,11 +26,11 @@ thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
     children_ptr_val &= ~1;
     children = *((hamt_node_t***) &children_ptr_val);
 
-    int hash_chunk = hash;
-    hash_chunk <<= (32 - lvl * CHUNK_SIZE);
-    hash_chunk >>= (lvl * CHUNK_SIZE + CHUNK_SIZE);
+    int symbol = hash;
+    symbol <<= (32 - lvl * CHUNK_SIZE);
+    symbol >>= (lvl * CHUNK_SIZE + CHUNK_SIZE);
 
-    int shifted = node->bitmap >> hash_chunk;
+    int shifted = node->bitmap >> symbol;
     bool child_exists = shifted & 1;
     if (child_exists) {
         // position of child is popcount of 1-bits to the left of bitmap at
@@ -63,24 +63,30 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     children_ptr_val &= ~HAMT_NODE_T_FLAG;
     children = (hamt_node_t**) children_ptr_val;
 
-    int offset = lvl * CHUNK_SIZE;
-    int hash_chunk = (hash << offset) >> (offset + CHUNK_SIZE);
+    int offset = (lvl + 1) * CHUNK_SIZE;
+    int right = 32 - offset;
+    if (offset > 32)
+        right = 0;
+    int symbol = (hash >> right) & ((1 << (right + 1)) - 1);
+    int shifted = node->bitmap >> symbol;
 
-
-    int shifted = node->bitmap >> hash_chunk;
+    printf("symbol: %x, hash: %x, shifted: %x\n", symbol, hash, shifted);
     bool child_exists = shifted & 1;
     if (child_exists) {
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
-        int subchildren_ptr_val = (int) (subnode->children);
 
+        int subchildren_ptr_val = (int) (subnode->children);
+        printf("subchildren ptr: %x\n", subchildren_ptr_val);
         if (subchildren_ptr_val & 1 == KEY_VALUE_T_FLAG) {
             // case: conflict with another key_value
 
             key_value_t *leaf = (key_value_t*) subnode;
             // key already inside, exit
+            //
+            printf("collision: %s, %s\n", (char*) (leaf->key->x), (char*) (key->x));
             if (thing_equals(leaf->key, key))
                 return false;
 
@@ -92,8 +98,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
             // copy over original conflicting key_value
             new_subnode->children[0] = subnode;
             // set the type flag
-            subchildren_ptr_val = (int) (new_subnode->children);
-            new_subnode->children = (hamt_node_t**) (subchildren_ptr_val | HAMT_NODE_T_FLAG);
+            new_subnode->children = (hamt_node_t**) ((int) (new_subnode->children) | HAMT_NODE_T_FLAG);
 
             // set parent's child to new_subnode
             children[child_position] = new_subnode;
@@ -107,7 +112,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         int children_before = __builtin_popcount(shifted >> 1);
 
         // set new bit
-        node->bitmap |= 1 << hash_chunk;
+        node->bitmap |= 1 << symbol;
         hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size + 1));
 
         // copy over children until the spot for the new guy
@@ -166,9 +171,10 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     bool inserted = false;
 
     if (trie->size == 0) {
-        int hash_chunk = hash >> (32 - CHUNK_SIZE);
+        int symbol = hash >> (32 - CHUNK_SIZE);
+        printf("symbol: %x\n", symbol);
 
-        trie->root->bitmap = 1 << hash_chunk;
+        trie->root->bitmap = 1 << symbol;
         trie->root->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
 
         key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));

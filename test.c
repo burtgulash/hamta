@@ -24,6 +24,7 @@ static char *test_insert() {
     hamt_insert(h, &a, &b);
     hamt_insert(h, &b, &a);
     hamt_insert(h, &c, &a);
+    hamt_insert(h, &c, &a);
 
 //    fprintf(stderr, "hamt_size: %d\n", hamt_size(h));
     mu_assert("error, hamt size doesn't match", hamt_size(h) == 3);
