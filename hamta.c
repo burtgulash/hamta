@@ -156,8 +156,3 @@ void* hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = fnv1(key->x, key->len);
     return hamt_node_search(trie->root, hash, 0, key);
 }
-
-void main() {
-    char *a = "autobus";
-    printf("%d\n", fnv1(a, 7));
-}
