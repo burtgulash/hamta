@@ -19,15 +19,18 @@ static char *test_insert() {
     hamt_t *h = new_hamt();
     thing_t key = { .x = "auto", .len = 4 };
     thing_t value = { .x = "bus", .len = 3 };
+
     hamt_insert(h, &key, &value);
 
-    mu_assert("error, hamt fucked up", h != NULL);
+//    fprintf(stderr, "hamt_size: %d\n", hamt_size(h));
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == 1);
     return NULL;
 };
 
 static char *all_tests() {
     mu_suite_start();
     mu_run_test(test_foo);
+    mu_run_test(test_insert);
 
     return NULL;
 }

@@ -57,7 +57,7 @@ thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
     return NULL;
 }
 
-void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
+bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
 
@@ -85,6 +85,11 @@ void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         if (subchildren_ptr_val & 1 == KEY_VALUE_T_FLAG) {
             // case: conflict with another key_value
 
+            key_value_t *leaf = (key_value_t*) subnode;
+            // key already inside, exit
+            if (thing_equals(leaf->key, key))
+                return false;
+
             hamt_node_t *new_subnode = (hamt_node_t*) malloc(sizeof(hamt_node_t));
             // set first bit
             new_subnode->bitmap = 1 << 31;
@@ -98,7 +103,7 @@ void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
             subnode = new_subnode;
         }
 
-        hamt_node_insert(subnode, hash, lvl + 1, key, value);
+        return hamt_node_insert(subnode, hash, lvl + 1, key, value);
     } else {
         // case: free node
         int children_size = __builtin_popcount(node->bitmap);
@@ -128,16 +133,14 @@ void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         // destroy the old children array
         free(node->children);
         node->children = new_children;
+
+        return true;
     }
 }
 
-hamt_t* new_hamt() {
-    hamt_t *h = (hamt_t*) malloc(sizeof(hamt_t));
-    assert(h);
-    h->root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
-    return h;
-}
 
+
+// FNV-1 Hash function
 uint32_t fnv1(void *key, size_t len) {
     uint32_t hash = 2166136261;
     for (size_t i = 0; i < len; i++) {
@@ -147,9 +150,25 @@ uint32_t fnv1(void *key, size_t len) {
     return hash;
 }
 
+
+// HAMTa constructor
+hamt_t* new_hamt() {
+    hamt_t *h = (hamt_t*) malloc(sizeof(hamt_t));
+    assert(h);
+    h->root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
+    h->size = 0;
+    return h;
+}
+
+int hamt_size(hamt_t *trie) {
+    return trie->size;
+}
+
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     uint32_t hash = fnv1(key->x, key->len);
-    hamt_node_insert(trie->root, hash, 0, key, value);
+    bool inserted = hamt_node_insert(trie->root, hash, 0, key, value);
+    if (inserted)
+        trie->size++;
 }
 
 void* hamt_search(hamt_t *trie, thing_t *key) {

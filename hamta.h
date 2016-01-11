@@ -26,10 +26,12 @@ typedef struct hamt_node {
 
 typedef struct hamt {
     hamt_node_t *root;
+    int size;
 } hamt_t;
 
 hamt_t* new_hamt();
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
 void* hamt_search(hamt_t *trie, thing_t *key);
+int hamt_size(hamt_t *trie);
 
 #endif
