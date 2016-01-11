@@ -15,6 +15,16 @@ static char *test_create() {
     return NULL;
 }
 
+static char *test_insert() {
+    hamt_t *h = new_hamt();
+    thing_t key = { .x = "auto", .len = 4 };
+    thing_t value = { .x = "bus", .len = 3 };
+    hamt_insert(h, &key, &value);
+
+    mu_assert("error, hamt fucked up", h != NULL);
+    return NULL;
+};
+
 static char *all_tests() {
     mu_suite_start();
     mu_run_test(test_foo);
