@@ -2,18 +2,18 @@
 #define HAMTA_H
 #include <stdint.h>
 
-typedef struct {
-    hamt_node_t *root;
-} hamt;
-
-typedef struct {
+typedef struct key_value {
     void *key;
     void *value;
 } key_value_t;
 
-typedef struct {
+typedef struct hamt_node {
     uint32_t bitmap;
-    hamt_node_t **children;
+    struct hamt_node **children;
 } hamt_node_t;
+
+typedef struct hamt {
+    hamt_node_t *root;
+} hamt_t;
 
 #endif

@@ -3,11 +3,11 @@
 #include <assert.h>
 #include "hamta.h"
 
-hamt* new_hamt() {
-    hamt *h = (hamt*) malloc(sizeof(hamt));
+hamt_t* new_hamt() {
+    hamt_t *h = (hamt_t*) malloc(sizeof(hamt_t));
     assert(h);
-    h.root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
-    return h
+    h->root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
+    return h;
 }
 
 uint32_t fnv1(void *key, size_t len) {
@@ -16,10 +16,10 @@ uint32_t fnv1(void *key, size_t len) {
         hash *= 16777619;
         hash ^= ((char*) key)[i];
     }
-    uint32_t hash = 16777619;
+    return hash;
 }
 
-void insert(hamt *trie, void *key, size_t key_len,
+void insert(hamt_t *trie, void *key, size_t key_len,
             void *value, size_t value_len) {
     uint32_t hash = fnv1(key, key_len);
 }
