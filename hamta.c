@@ -24,6 +24,12 @@ thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
                                                             thing_t *key) {
     assert(node != NULL);
 
+    hamt_node_t **children = node->children;
+    int children_ptr_val = *((int*) &children);
+    assert(children_ptr_val & 1 == HAMT_NODE_T_FLAG);
+    children_ptr_val &= ~1;
+    children = *((hamt_node_t***) &children_ptr_val);
+
     int hash_chunk = hash;
     hash_chunk <<= (32 - lvl * CHUNK_SIZE);
     hash_chunk >>= (lvl * CHUNK_SIZE + CHUNK_SIZE);
@@ -34,23 +40,18 @@ thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
-        hamt_node_t *subnode = (node->children)[child_position];
-        hamt_node_t **children = subnode->children;
-        int children_ptr_val = *((int*) &children);
+        hamt_node_t *subnode = children[child_position];
 
-        if (children_ptr_val & 1 == KEY_VALUE_T_FLAG) {
-            // clear flag bit before dereferencing
-            children_ptr_val &= ~1;
-            // convert back to original type without the flag bit
-            children = *((hamt_node_t***) &children_ptr_val);
-            return hamt_node_search(children[child_position],
-                                    hash, lvl + 1, key);
-        } else {
+        hamt_node_t **subchildren = subnode->children;
+        int subchildren_ptr_val = *((int*) &subchildren);
+
+        if (subchildren_ptr_val & 1 == KEY_VALUE_T_FLAG) {
             // switch type of hamt_node_t to key_value_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key))
                 return leaf->value;
-        }
+        } else
+            return hamt_node_search(subnode, hash, lvl + 1, key);
     }
 
     return NULL;
@@ -60,6 +61,12 @@ void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
 
+    hamt_node_t **children = node->children;
+    int children_ptr_val = *((int*) &children);
+    assert(children_ptr_val & 1 == HAMT_NODE_T_FLAG);
+    children_ptr_val &= ~1;
+    children = *((hamt_node_t***) &children_ptr_val);
+
     int hash_chunk = hash;
     hash_chunk <<= (32 - lvl * CHUNK_SIZE);
     hash_chunk >>= (lvl * CHUNK_SIZE + CHUNK_SIZE);
@@ -70,26 +77,35 @@ void hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
-        hamt_node_t *subnode = (node->children)[child_position];
-        hamt_node_t **children = subnode->children;
-        int children_ptr_val = *((int*) &children);
+        hamt_node_t *subnode = children[child_position];
 
-        if (children_ptr_val & 1 == KEY_VALUE_T_FLAG) {
-            // clear flag bit before dereferencing
-            children_ptr_val &= ~1;
-            // convert back to original type without the flag bit
-            children = *((hamt_node_t***) &children_ptr_val);
-            hamt_node_insert(children[child_position], hash, lvl + 1, key, value);
-        } else {
-            // CONFLICT
+        hamt_node_t **subchildren = subnode->children;
+        int subchildren_ptr_val = *((int*) &subchildren);
+
+        if (subchildren_ptr_val & 1 == KEY_VALUE_T_FLAG) {
+            // case: conflict with another key_value
+
+            hamt_node_t *new_subnode = (hamt_node_t*) malloc(sizeof(hamt_node_t));
+            // set first bit
+            new_subnode->bitmap = 1 << 31;
+            // make children array of size one for only the original node
+            new_subnode->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
+            // copy over original conflicting key_value
+            new_subnode->children[0] = subnode;
+
+            // set parent's child to new_subnode
+            children[child_position] = new_subnode;
+            subnode = new_subnode;
         }
+
+        hamt_node_insert(subnode, hash, lvl + 1, key, value);
     } else {
-        // free node
+        // case: free node
         int children_size = __builtin_popcount(node->bitmap);
         int children_before = __builtin_popcount(shifted >> 1);
 
         // set new bit
-        node->bitmap |= 1 << (hash_chunk + 1);
+        node->bitmap |= 1 << hash_chunk;
         hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size + 1));
 
         // copy over children until the spot for the new guy
