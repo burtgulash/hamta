@@ -63,9 +63,9 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     children_ptr_val &= ~HAMT_NODE_T_FLAG;
     children = (hamt_node_t**) children_ptr_val;
 
-    int hash_chunk = hash;
-    hash_chunk <<= (32 - lvl * CHUNK_SIZE);
-    hash_chunk >>= (lvl * CHUNK_SIZE + CHUNK_SIZE);
+    int offset = lvl * CHUNK_SIZE;
+    int hash_chunk = (hash << offset) >> (offset + CHUNK_SIZE);
+
 
     int shifted = node->bitmap >> hash_chunk;
     bool child_exists = shifted & 1;
@@ -129,7 +129,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
 
         // destroy the old children array
         free(children);
-        node->children = new_children;
+        node->children = (hamt_node_t**) ((int) new_children | HAMT_NODE_T_FLAG);
 
         return true;
     }
@@ -167,6 +167,7 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 
     if (trie->size == 0) {
         int hash_chunk = hash >> (32 - CHUNK_SIZE);
+
         trie->root->bitmap = 1 << hash_chunk;
         trie->root->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
 
