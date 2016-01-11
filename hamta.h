@@ -6,7 +6,7 @@
 // do not change macro of these values!  objects's last bit will be set to 1 if
 // it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
 // will align to some multiple of even number.
-#define KEY_VALUE_T_FLAG 0
+#define KEY_VALUE_T_FLAG 0 // values can be NULL, so keep in this way
 #define HAMT_NODE_T_FLAG 1
 
 typedef struct thing {

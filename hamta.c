@@ -15,10 +15,6 @@ bool thing_equals(thing_t *a, thing_t *b) {
     return true;
 }
 
-hamt_node_t* new_hamt_node() {
-    hamt_node_t *node = (hamt_node_t*) malloc(sizeof(hamt_node_t));
-    return node;
-}
 
 thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
                                                             thing_t *key) {
@@ -166,7 +162,23 @@ int hamt_size(hamt_t *trie) {
 
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     uint32_t hash = fnv1(key->x, key->len);
-    bool inserted = hamt_node_insert(trie->root, hash, 0, key, value);
+    bool inserted = false;
+
+    if (trie->size == 0) {
+        int hash_chunk = hash >> (32 - CHUNK_SIZE);
+        trie->root->bitmap = 1 << hash_chunk;
+        trie->root->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
+
+        key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));
+        new_leaf->key = key;
+        new_leaf->value = value;
+
+        trie->root->children[0] = (hamt_node_t*) new_leaf;
+
+        inserted = true;
+    } else
+        inserted = hamt_node_insert(trie->root, hash, 0, key, value);
+
     if (inserted)
         trie->size++;
 }
