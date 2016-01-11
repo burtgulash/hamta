@@ -58,10 +58,10 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     assert(node != NULL);
 
     hamt_node_t **children = node->children;
-    int children_ptr_val = *((int*) &children);
+    int children_ptr_val = (int) children;
     assert(children_ptr_val & 1 == HAMT_NODE_T_FLAG);
-    children_ptr_val &= ~1;
-    children = *((hamt_node_t***) &children_ptr_val);
+    children_ptr_val &= ~HAMT_NODE_T_FLAG;
+    children = (hamt_node_t**) children_ptr_val;
 
     int hash_chunk = hash;
     hash_chunk <<= (32 - lvl * CHUNK_SIZE);
@@ -74,9 +74,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
-
-        hamt_node_t **subchildren = subnode->children;
-        int subchildren_ptr_val = *((int*) &subchildren);
+        int subchildren_ptr_val = (int) (subnode->children);
 
         if (subchildren_ptr_val & 1 == KEY_VALUE_T_FLAG) {
             // case: conflict with another key_value
@@ -93,6 +91,9 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
             new_subnode->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
             // copy over original conflicting key_value
             new_subnode->children[0] = subnode;
+            // set the type flag
+            subchildren_ptr_val = (int) (new_subnode->children);
+            new_subnode->children = (hamt_node_t**) (subchildren_ptr_val | HAMT_NODE_T_FLAG);
 
             // set parent's child to new_subnode
             children[child_position] = new_subnode;
@@ -112,7 +113,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         // copy over children until the spot for the new guy
         int i;
         for (i = 0; i < children_before; i++)
-            new_children[i] = (node->children)[i];
+            new_children[i] = children[i];
 
         // create the new guy
         key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));
@@ -124,10 +125,10 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
 
         // copy over remaining children
         for (; i < children_size; i++)
-            new_children[i + 1] = (node->children)[i];
+            new_children[i + 1] = children[i];
 
         // destroy the old children array
-        free(node->children);
+        free(children);
         node->children = new_children;
 
         return true;
@@ -174,6 +175,8 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
         new_leaf->value = value;
 
         trie->root->children[0] = (hamt_node_t*) new_leaf;
+        int children_ptr_val = (int) (trie->root->children);
+        trie->root->children = (hamt_node_t**) (children_ptr_val | HAMT_NODE_T_FLAG);
 
         inserted = true;
     } else

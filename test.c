@@ -17,13 +17,15 @@ static char *test_create() {
 
 static char *test_insert() {
     hamt_t *h = new_hamt();
-    thing_t key = { .x = "auto", .len = 4 };
-    thing_t value = { .x = "bus", .len = 3 };
+    thing_t a = { .x = "auto", .len = 4 };
+    thing_t b = { .x = "bus", .len = 3 };
+    thing_t c = { .x = "vlak", .len = 4 };
 
-    hamt_insert(h, &key, &value);
+    hamt_insert(h, &a, &b);
+    hamt_insert(h, &b, &a);
 
 //    fprintf(stderr, "hamt_size: %d\n", hamt_size(h));
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == 1);
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == 2);
     return NULL;
 };
 
