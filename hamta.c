@@ -31,26 +31,27 @@ thing_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl,
     int shifted = node->bitmap >> hash_chunk;
     bool child_exists = shifted & 1;
     if (child_exists) {
+        // position of child is popcount of 1-bits to the left of bitmap at
+        // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = (node->children)[child_position];
         hamt_node_t **children = subnode->children;
         int children_ptr_val = *((int*) &children);
+
         if (children_ptr_val & 1 == KEY_VALUE_T_FLAG) {
             // clear flag bit before dereferencing
             children_ptr_val &= ~1;
             // convert back to original type without the flag bit
             children = *((hamt_node_t***) &children_ptr_val);
+            return hamt_node_search(children[child_position],
+                                    hash, lvl + 1, key);
         } else {
+            // switch type of hamt_node_t to key_value_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key))
                 return leaf->value;
-            else {
-            }
         }
-
-
-    } else
-        return NULL;
+    }
 
     return NULL;
 }
