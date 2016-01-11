@@ -1,6 +1,7 @@
 #ifndef HAMTA_H
 #define HAMTA_H
 #include <stdint.h>
+#include <stdbool.h>
 
 // do not change macro of these values!  objects's last bit will be set to 1 if
 // it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
@@ -26,5 +27,9 @@ typedef struct hamt_node {
 typedef struct hamt {
     hamt_node_t *root;
 } hamt_t;
+
+hamt_t* new_hamt();
+void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
+void* hamt_search(hamt_t *trie, thing_t *key);
 
 #endif

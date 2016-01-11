@@ -152,7 +152,7 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     hamt_node_insert(trie->root, hash, 0, key, value);
 }
 
-void* hamt_find(hamt_t *trie, thing_t *key) {
+void* hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = fnv1(key->x, key->len);
     return hamt_node_search(trie->root, hash, 0, key);
 }
