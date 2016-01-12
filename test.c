@@ -39,28 +39,45 @@ static char *test_hamta() {
     }
 
     return NULL;
-};
+}
 
 static char *test_hamta2() {
     hamt_t *h = new_hamt();
+
     thing_t aut = { .x = "aut", .len = 3 };
     thing_t bus = { .x = "bus", .len = 3 };
     thing_t vlak = { .x = "vlak", .len = 4 };
     thing_t kokos = { .x = "kokos", .len = 5 };
     thing_t banan = { .x = "banan", .len = 5 };
     thing_t losos = { .x = "losos", .len = 5 };
+    thing_t bro = { .x = "bro", .len = 3 };
+    thing_t b = { .x = "b", .len = 1 };
+    thing_t bubakov = { .x = "bubakov", .len = 7 };
 
-    thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos};
-    for (int i = 0; i < 6; i++) {
+    thing_t z[] = { {.x="a",        .len=1},
+                    {.x="bb",       .len=2},
+                    {.x="auto",     .len=4},
+                    {.x="bus",      .len=3},
+                    {.x="vlak",     .len=4},
+                    {.x="kokos",    .len=5},
+                    {.x="banan",    .len=5},
+                    {.x="losos",    .len=5},
+                    {.x="bubakov",  .len=7},
+                    {.x="korkodyl", .len=8},
+                    {.x="x",        .len=1},
+                    {.x="__x__",    .len=5} };
+
+    int len = sizeof(z) / sizeof(thing_t);
+    for (int i = 0; i < len; i++) {
         hamt_print(h);
-        hamt_insert(h, s[i], s[i]);
+        hamt_insert(h, &z[i], &z[i]);
     }
     hamt_print(h);
 
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == 6);
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == len);
 
     return NULL;
-};
+}
 
 
 

@@ -179,7 +179,7 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
             hamt_node_print(children[i], lvl + 1);
     } else {
         key_value_t *leaf = (key_value_t*) node;
-        printf("{%s -> %s}\n", (char*) leaf->key->x, (char*) leaf->value->x);
+        printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
     }
 }
 

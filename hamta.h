@@ -35,4 +35,6 @@ key_value_t* hamt_search(hamt_t *trie, thing_t *key);
 int hamt_size(hamt_t *trie);
 void hamt_print(hamt_t *trie);
 
+uint32_t fnv1(void *key, size_t len);
+
 #endif
