@@ -160,6 +160,34 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     }
 }
 
+key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
+    assert(node != NULL);
+
+    hamt_node_t **children = get_children_pointer(node);
+    int symbol = _hamt_get_symbol(hash, lvl);
+    int shifted = (node->bitmap) >> symbol;
+    bool child_exists = shifted & 1;
+
+    if (child_exists) {
+        int child_position = __builtin_popcount(shifted >> 1);
+        hamt_node_t *subnode = children[child_position];
+
+        int subchildren_ptr_val = (int) (subnode->children);
+        if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
+            key_value_t *leaf = (key_value_t*) subnode;
+            if (thing_equals(leaf->key, key)) {
+                int children_size = __builtin_popcount(node->bitmap);
+
+                // TODO remove the node
+                return leaf;
+            }
+        } else
+            return hamt_node_remove(subnode, hash, lvl + 1, key);
+    }
+
+    return NULL;
+}
+
 void hamt_node_print(hamt_node_t *node, int lvl) {
     for (int i = 0; i < lvl * 2; i++)
         putchar(' ');
