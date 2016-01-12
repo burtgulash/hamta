@@ -177,18 +177,12 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     bool inserted = false;
 
     if (trie->size == 0) {
-        int symbol = hash >> (32 - CHUNK_SIZE);
-
-        trie->root->bitmap = 1 << symbol;
-        trie->root->children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
-
         key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));
         new_leaf->key = key;
         new_leaf->value = value;
 
-        trie->root->children[0] = (hamt_node_t*) new_leaf;
-        int children_ptr_val = (int) (trie->root->children);
-        trie->root->children = (hamt_node_t**) (children_ptr_val | HAMT_NODE_T_FLAG);
+        int symbol = hash >> (32 - CHUNK_SIZE);
+        trie->root = _hamt_make_subnode(new_leaf, symbol);
 
         inserted = true;
     } else
