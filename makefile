@@ -5,5 +5,5 @@ SRC=$(wildcard *.c)
 .PHONY: all test
 
 test: $(SRC)
-	$(CC) -o test_runner $^ $(CFLAGS) -g
+	$(CC) -o test_runner $^ $(CFLAGS) -g -DDEBUG
 	./test_runner
