@@ -15,24 +15,37 @@ bool thing_equals(thing_t *a, thing_t *b) {
     return true;
 }
 
-
-key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
-    assert(node != NULL);
-
-    hamt_node_t **children = node->children;
-    int children_ptr_val = (int) children;
-    assert((children_ptr_val & 1) == HAMT_NODE_T_FLAG);
-    children_ptr_val &= ~HAMT_NODE_T_FLAG;
-    children = (hamt_node_t**) children_ptr_val;
-
+int _hamt_get_symbol(uint32_t hash, int lvl) {
     int offset = (lvl + 1) * CHUNK_SIZE;
     int right = 32 - offset;
     if (offset > 32)
         right = 0;
     int symbol = (hash >> right) & ((1 << (right + 1)) - 1);
-    int shifted = node->bitmap >> symbol;
+    return symbol;
+}
 
+key_value_t* new_kv(thing_t *key, thing_t *value) {
+    key_value_t *kv = (key_value_t*) malloc(sizeof(key_value_t));
+    kv->key = key;
+    kv->value = value;
+    return kv;
+}
+
+hamt_node_t** get_children_pointer(hamt_node_t *node) {
+    int children_ptr_val = (int) (node->children);
+    children_ptr_val &= ~HAMT_NODE_T_FLAG;
+    return (hamt_node_t**) children_ptr_val;
+}
+
+
+key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
+    assert(node != NULL);
+
+    hamt_node_t **children = get_children_pointer(node);
+    int symbol = _hamt_get_symbol(hash, lvl);
+    int shifted = node->bitmap >> symbol;
     bool child_exists = shifted & 1;
+
     if (child_exists) {
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
@@ -41,7 +54,6 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 
         int subchildren_ptr_val = (int) (subnode->children);
         if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
-            // switch type of hamt_node_t to key_value_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key))
                 return leaf;
@@ -65,39 +77,16 @@ hamt_node_t* _hamt_make_subnode(key_value_t *first_child, int symbol) {
     return new_subnode;
 }
 
-int _hamt_get_symbol(uint32_t hash, int lvl) {
-    int offset = (lvl + 1) * CHUNK_SIZE;
-    int right = 32 - offset;
-    if (offset > 32)
-        right = 0;
-    int symbol = (hash >> right) & ((1 << (right + 1)) - 1);
-    return symbol;
-}
-
-key_value_t* new_kv(thing_t *key, thing_t *value) {
-    key_value_t *kv = (key_value_t*) malloc(sizeof(key_value_t));
-    kv->key = key;
-    kv->value = value;
-    return kv;
-}
-
 bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
 
-    hamt_node_t **children = node->children;
-    int children_ptr_val = (int) children;
-    assert((children_ptr_val & 1) == HAMT_NODE_T_FLAG);
-    children_ptr_val &= ~HAMT_NODE_T_FLAG;
-    children = (hamt_node_t**) children_ptr_val;
-
+    hamt_node_t **children = get_children_pointer(node);
     int symbol = _hamt_get_symbol(hash, lvl);
     int shifted = node->bitmap >> symbol;
     bool child_exists = shifted & 1;
 
     if (child_exists) {
-        // position of child is popcount of 1-bits to the left of bitmap at
-        // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
 
