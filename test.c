@@ -52,9 +52,10 @@ static char *test_hamta2() {
 
     thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos};
     for (int i = 0; i < 6; i++) {
-        hamt_insert(h, s[i], s[i]);
         hamt_print(h);
+        hamt_insert(h, s[i], s[i]);
     }
+    hamt_print(h);
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == 6);
 
@@ -67,8 +68,8 @@ static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_foo);
-    mu_run_test(test_hamta);
     mu_run_test(test_hamta2);
+    mu_run_test(test_hamta);
 
     return NULL;
 }
