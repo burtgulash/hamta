@@ -74,6 +74,13 @@ int _hamt_get_symbol(uint32_t hash, int lvl) {
     return symbol;
 }
 
+key_value_t* new_kv(thing_t *key, thing_t *value) {
+    key_value_t *kv = (key_value_t*) malloc(sizeof(key_value_t));
+    kv->key = key;
+    kv->value = value;
+    return kv;
+}
+
 bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
@@ -126,10 +133,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         for (i = 0; i < children_before; i++)
             new_children[i] = children[i];
 
-        // create the new guy
-        key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));
-        new_leaf->key = key;
-        new_leaf->value = value;
+        key_value_t *new_leaf = new_kv(key, value);
 
         // convert key_value_t* to hamt_node_t* for polymorphic type
         new_children[i] = (hamt_node_t*) new_leaf;
@@ -177,9 +181,7 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     bool inserted = false;
 
     if (trie->size == 0) {
-        key_value_t *new_leaf = (key_value_t*) malloc(sizeof(key_value_t));
-        new_leaf->key = key;
-        new_leaf->value = value;
+        key_value_t *new_leaf = new_kv(key, value);
 
         int symbol = hash >> (32 - CHUNK_SIZE);
         trie->root = _hamt_make_subnode(new_leaf, symbol);
