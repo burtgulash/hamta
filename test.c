@@ -21,9 +21,6 @@ static char *test_hamta() {
     thing_t a = { .x = "auto", .len = 4 };
     thing_t b = { .x = "bus", .len = 3 };
     thing_t c = { .x = "vlak", .len = 4 };
-    thing_t d = { .x = "kokos", .len = 5 };
-    thing_t e = { .x = "banan", .len = 5 };
-    thing_t f = { .x = "losos", .len = 5 };
 
     hamt_insert(h, &a, &b);
     hamt_insert(h, &b, &a);
@@ -46,32 +43,22 @@ static char *test_hamta() {
 
 static char *test_hamta2() {
     hamt_t *h = new_hamt();
-    thing_t a = { .x = "auto", .len = 4 };
-    thing_t b = { .x = "bus", .len = 3 };
-    thing_t c = { .x = "vlak", .len = 4 };
-    thing_t d = { .x = "kokos", .len = 5 };
-    thing_t e = { .x = "banan", .len = 5 };
-    thing_t f = { .x = "losos", .len = 5 };
+    thing_t aut = { .x = "aut", .len = 3 };
+    thing_t bus = { .x = "bus", .len = 3 };
+    thing_t vlak = { .x = "vlak", .len = 4 };
+    thing_t kokos = { .x = "kokos", .len = 5 };
+    thing_t banan = { .x = "banan", .len = 5 };
+    thing_t losos = { .x = "losos", .len = 5 };
 
-    hamt_insert(h, &a, &b);
-    hamt_insert(h, &b, &a);
-    hamt_insert(h, &c, &a);
-    hamt_insert(h, &e, &e);
-    hamt_insert(h, &c, &a);
-    hamt_insert(h, &d, &a);
-    hamt_insert(h, &f, &c);
-    hamt_insert(h, &f, &a);
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == 6);
-
-    key_value_t *found;
-    thing_t *searching_for;
-    thing_t *s0[] = {&a, &b, &c, &c, &d, &e, &f};
-    for (int i = 0; i < 7; i++) {
-        searching_for = s0[i];
-        found = hamt_search(h, searching_for);
-        mu_assert("error2, not found", found != NULL);
-        mu_assert("error2, didn't find the correct key", (strcmp(found->key->x, searching_for->x)) == 0);
+    thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos};
+    for (int i = 0; i < 6; i++) {
+        hamt_insert(h, s[i], s[i]);
+        hamt_print(h);
     }
+    hamt_insert(h, s[0], s[0]);
+    hamt_insert(h, s[1], s[1]);
+
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == 6);
 
     return NULL;
 };

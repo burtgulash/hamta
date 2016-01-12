@@ -139,6 +139,25 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     }
 }
 
+#include <string.h>
+
+void hamt_node_print(hamt_node_t *node, int lvl) {
+    for (int i = 0; i < lvl * 2; i++)
+        putchar(' ');
+
+    int children_ptr_val = (int) (node->children);
+    if ((children_ptr_val & 1) == HAMT_NODE_T_FLAG) {
+        int children_size = __builtin_popcount(node->bitmap);
+        hamt_node_t **children = get_children_pointer(node);
+
+        printf("bitmap: %08x\n", node->bitmap);
+        for (int i = 0; i < children_size; i++)
+            hamt_node_print(children[i], lvl + 1);
+    } else {
+        key_value_t *leaf = (key_value_t*) node;
+        printf("{%s -> %s}\n", (char*) leaf->key->x, (char*) leaf->value->x);
+    }
+}
 
 
 // FNV-1 Hash function
@@ -186,4 +205,12 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 key_value_t* hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = fnv1(key->x, key->len);
     return hamt_node_search(trie->root, hash, 0, key);
+}
+
+void hamt_print(hamt_t *trie) {
+    if (trie->size > 0)
+        hamt_node_print(trie->root, -1);
+    else
+        printf("Empty trie\n");
+    printf("---\n\n");
 }
