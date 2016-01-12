@@ -18,31 +18,6 @@ static char *test_create() {
 
 static char *test_hamta() {
     hamt_t *h = new_hamt();
-    thing_t a = { .x = "auto", .len = 4 };
-    thing_t b = { .x = "bus", .len = 3 };
-    thing_t c = { .x = "vlak", .len = 4 };
-
-    hamt_insert(h, &a, &b);
-    hamt_insert(h, &b, &a);
-    hamt_insert(h, &c, &a);
-    hamt_insert(h, &c, &a);
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == 3);
-
-    key_value_t *found;
-    thing_t *searching_for;
-    thing_t *s0[] = {&a, &b, &c, &c};
-    for (int i = 0; i < 4; i++) {
-        searching_for = s0[i];
-        found = hamt_search(h, searching_for);
-        mu_assert("error, not found", found != NULL);
-        mu_assert("error, didn't find the correct key", (strcmp(found->key->x, searching_for->x)) == 0);
-    }
-
-    return NULL;
-}
-
-static char *test_hamta2() {
-    hamt_t *h = new_hamt();
 
     thing_t aut = { .x = "aut", .len = 3 };
     thing_t bus = { .x = "bus", .len = 3 };
@@ -53,6 +28,34 @@ static char *test_hamta2() {
     thing_t bro = { .x = "bro", .len = 3 };
     thing_t b = { .x = "b", .len = 1 };
     thing_t bubakov = { .x = "bubakov", .len = 7 };
+
+    hamt_insert(h, &aut, &bus);
+    hamt_insert(h, &bus, &vlak);
+    hamt_insert(h, &vlak, &kokos);
+    hamt_insert(h, &kokos, &banan);
+    hamt_insert(h, &losos, &bro);
+    hamt_insert(h, &bro, &b);
+    hamt_insert(h, &bubakov, &aut);
+
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == 7);
+
+    key_value_t *found;
+    thing_t *searching_for;
+    thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos, &bro, &b, &bubakov};
+    int len = sizeof(s) / sizeof(thing_t*);
+
+    for (int i = 0; i < len; i++) {
+        searching_for = s[i];
+        found = hamt_search(h, searching_for);
+        mu_assert("error, not found", found != NULL);
+        mu_assert("error, didn't find the correct key", (strcmp(found->key->x, searching_for->x)) == 0);
+    }
+
+    return NULL;
+}
+
+static char *test_hamta2() {
+    hamt_t *h = new_hamt();
 
     thing_t z[] = { {.x="a",        .len=1},
                     {.x="bb",       .len=2},
