@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
 #include "hamta.h"
 
 #define CHUNK_SIZE 5
@@ -96,7 +97,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
     if (lvl * CHUNK_SIZE > 32) {
-        printf("max depth reached\n");
+        assert(false); // TODO make conflict arrays at the floor of the tree
         return false;
     }
 
@@ -104,13 +105,11 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
     int symbol = _hamt_get_symbol(hash, lvl);
     int shifted = (node->bitmap) >> symbol;
     bool child_exists = shifted & 1;
-    printf("hash: %08x, bitmap: %08x, symbol: %d, shifted: %08x, child_exists: %d\n", hash, node->bitmap, symbol, shifted, shifted & 1);
 
     if (child_exists) {
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
 
-        printf("shifted: %08x, subnode position: %d\n", (shifted>>1), child_position);
         int subchildren_ptr_val = (int) (subnode->children);
         if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
             // case: conflict with another key_value
@@ -122,7 +121,6 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
 
             uint32_t original_hash = fnv1(leaf->key->x, leaf->key->len);
             int subnode_symbol = _hamt_get_symbol(original_hash, lvl + 1);
-            printf("inserting subnode with symbol %d\n", subnode_symbol);
             hamt_node_t *new_subnode = _hamt_make_subnode(leaf, subnode_symbol);
 
             // set parent's child to new_subnode
@@ -137,7 +135,6 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         int children_before = __builtin_popcount(shifted >> 1);
 
         // set new bit
-        printf("inserting kv with symbol %d, key=%s\n", symbol, (char*) key->x);
         node->bitmap |= 1 << symbol;
         hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size + 1));
 
@@ -162,8 +159,6 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
         return true;
     }
 }
-
-#include <string.h>
 
 void hamt_node_print(hamt_node_t *node, int lvl) {
     for (int i = 0; i < lvl * 2; i++)
@@ -205,7 +200,6 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
         key_value_t *new_leaf = new_kv(key, value);
 
         int symbol = hash >> (32 - CHUNK_SIZE);
-        printf("inserting kv with symbol %d, key=%s\n", symbol, (char*) key->x);
         trie->root = _hamt_make_subnode(new_leaf, symbol);
 
         inserted = true;
@@ -225,6 +219,6 @@ void hamt_print(hamt_t *trie) {
     if (trie->size > 0)
         hamt_node_print(trie->root, 0);
     else
-        printf("Empty trie\n");
+        printf("{}\n");
     printf("---\n\n");
 }

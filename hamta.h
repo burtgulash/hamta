@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(...) do{ } while ( false )
+#endif
+
 // do not change macro of these values!  objects's last bit will be set to 1 if
 // it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
 // will align to some multiple of even number.
