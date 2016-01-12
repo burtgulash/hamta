@@ -16,11 +16,15 @@ bool thing_equals(thing_t *a, thing_t *b) {
 }
 
 int _hamt_get_symbol(uint32_t hash, int lvl) {
-    int offset = (lvl + 1) * CHUNK_SIZE;
-    int right = 32 - offset;
-    if (offset > 32)
+    int left = lvl * CHUNK_SIZE;
+    int left_plus_chunk = left + CHUNK_SIZE;
+    int right = 32 - left_plus_chunk;
+    if (left_plus_chunk > 32)
         right = 0;
-    int symbol = (hash >> right) & ((1 << (right + 1)) - 1);
+
+    int symbol = (hash << left) >> (right + left);
+
+    assert(0 <= symbol && symbol < 32);
     return symbol;
 }
 
@@ -80,6 +84,10 @@ hamt_node_t* _hamt_make_subnode(key_value_t *first_child, int symbol) {
 bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                                          thing_t *key, thing_t *value) {
     assert(node != NULL);
+    if (lvl * CHUNK_SIZE > 32) {
+        printf("max depth reached\n");
+        return false;
+    }
 
     hamt_node_t **children = get_children_pointer(node);
     int symbol = _hamt_get_symbol(hash, lvl);
@@ -100,6 +108,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl,
                 return false;
 
             symbol = _hamt_get_symbol(hash, lvl + 1);
+            printf("inserting with symbol %d\n\n", symbol);
             hamt_node_t *new_subnode = _hamt_make_subnode(leaf, symbol);
 
             // set parent's child to new_subnode
@@ -209,7 +218,7 @@ key_value_t* hamt_search(hamt_t *trie, thing_t *key) {
 
 void hamt_print(hamt_t *trie) {
     if (trie->size > 0)
-        hamt_node_print(trie->root, -1);
+        hamt_node_print(trie->root, 0);
     else
         printf("Empty trie\n");
     printf("---\n\n");

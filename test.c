@@ -55,8 +55,6 @@ static char *test_hamta2() {
         hamt_insert(h, s[i], s[i]);
         hamt_print(h);
     }
-    hamt_insert(h, s[0], s[0]);
-    hamt_insert(h, s[1], s[1]);
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == 6);
 
