@@ -48,9 +48,14 @@ key_value_t* new_kv(thing_t *key, thing_t *value) {
 }
 
 hamt_node_t** get_children_pointer(hamt_node_t *node) {
-    int children_ptr_val = (int) (node->sub.children);
-    children_ptr_val &= ~HAMT_NODE_T_FLAG;
-    return (hamt_node_t**) children_ptr_val;
+    int children_ptr = (int) (node->sub.children);
+    children_ptr &= ~HAMT_NODE_T_FLAG;
+    return (hamt_node_t**) children_ptr;
+}
+
+bool is_leaf(hamt_node_t *node) {
+    int children_ptr = (int) (node->sub.children);
+    return (children_ptr & 1) == KEY_VALUE_T_FLAG;
 }
 
 
@@ -68,8 +73,7 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
 
-        int subchildren_ptr_val = (int) (subnode->sub.children);
-        if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
+        if (is_leaf(subnode)) {
             if (thing_equals(subnode->leaf.key, key))
                 return (key_value_t*) subnode;
         } else
@@ -109,8 +113,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
 
-        int subchildren_ptr_val = (int) (subnode->sub.children);
-        if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
+        if (is_leaf(subnode)) {
             // case: conflict with another key_value
 
             // key already inside, exit
@@ -156,11 +159,6 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
     }
 }
 
-bool is_leaf(hamt_node_t *node) {
-    int children_ptr = (int) (node->sub.children);
-    return (children_ptr & 1) == 0;
-}
-
 key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     assert(node != NULL);
 
@@ -174,8 +172,7 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
 
-        int subchildren_ptr_val = (int) (subnode->sub.children);
-        if ((subchildren_ptr_val & 1) == KEY_VALUE_T_FLAG) {
+        if (is_leaf(subnode)) {
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key)) {
                 int children_size = __builtin_popcount(node->sub.bitmap);
@@ -218,17 +215,16 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
     for (int i = 0; i < lvl * 2; i++)
         putchar(' ');
 
-    int children_ptr_val = (int) (node->sub.children);
-    if ((children_ptr_val & 1) == HAMT_NODE_T_FLAG) {
+    if (is_leaf(node)) {
+        key_value_t *leaf = (key_value_t*) node;
+        printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
+    } else {
         int children_size = __builtin_popcount(node->sub.bitmap);
         hamt_node_t **children = get_children_pointer(node);
 
         printf("bitmap: %08x\n", node->sub.bitmap);
         for (int i = 0; i < children_size; i++)
             hamt_node_print(children[i], lvl + 1);
-    } else {
-        key_value_t *leaf = (key_value_t*) node;
-        printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
     }
 }
 
