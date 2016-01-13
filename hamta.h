@@ -9,22 +9,30 @@
 #define KEY_VALUE_T_FLAG 0 // values can be NULL, so keep in this way
 #define HAMT_NODE_T_FLAG 1
 
-typedef struct thing {
+typedef struct {
     void *x;
     size_t len;
 } thing_t;
 
-typedef struct key_value {
+
+union _hamt_node;
+
+typedef struct {
     thing_t *key;
     thing_t *value;
 } key_value_t;
 
-typedef struct hamt_node {
+typedef struct {
     uint32_t bitmap;
-    struct hamt_node **children;
+    union _hamt_node **children;
+} sub_node_t;
+
+typedef union _hamt_node {
+    key_value_t leaf;
+    sub_node_t sub;
 } hamt_node_t;
 
-typedef struct hamt {
+typedef struct {
     hamt_node_t *root;
     int size;
 } hamt_t;
