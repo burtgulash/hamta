@@ -58,7 +58,7 @@ static char *test_search_destroy() {
     #endif
     for (int i = 0; i < len; i++) {
         searching_for = s[i];
-        DEBUG_PRINT("\nsearching for key %s\n", (char*) searching_for->x);
+        DEBUG_PRINT("searching for key %s\n", (char*) searching_for->x);
         found = hamt_search(h, searching_for);
 
         mu_assert("error, not found", found != NULL);
