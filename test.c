@@ -9,7 +9,7 @@ static char *test_create() {
     mu_assert("error, hamt not initialized", h != NULL);
 
     thing_t x = { .x="x", .len=1 };
-    thing_t y = { .x="y", .len=1 };
+    thing_t y = { .x="yy", .len=2 };
 
     hamt_insert(h, &x, &x);
     hamt_insert(h, &y, &y);

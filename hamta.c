@@ -84,14 +84,17 @@ hamt_node_t* new_kv(thing_t *key, thing_t *value) {
 
 
 key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
-    assert(lvl > 0 && node != NULL || lvl == 0);
+    assert(node != NULL);
 
     if (is_leaf(node)) {
+        printf("searching key %.*s in leaf with key: %.*s\n", key->len, (char*) key->x, node->leaf.key->len, (char*) node->leaf.key->x);
         if (thing_equals(node->leaf.key, key))
             return (key_value_t*) node;
         else
             return NULL;
     }
+    printf("searching key %.*s in subnode with %d children\n", key->len, (char*) key->x, __builtin_popcount(node->sub.bitmap));
+    printf("bitmap: %08x\n", node->sub.bitmap);
 
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
@@ -102,8 +105,10 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
+        printf("searching in child position %d\n", child_position);
         return hamt_node_search(&children[child_position], hash, lvl + 1, key);
     }
+    printf("child with symbol %d doesn't exist\n", symbol);
 
     return NULL;
 }
@@ -117,7 +122,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
     }
 
     if (is_leaf(node)) {
-        printf("inserting key %.*s into leaf with key: %.*s\n", key->len, (char*) key->x, node->leaf.key->len, (char*) node->leaf.key->x);
+        printf("%d. inserting key %.*s into leaf with key: %.*s\n", lvl, key->len, (char*) key->x, node->leaf.key->len, (char*) node->leaf.key->x);
         if (thing_equals(node->leaf.key, key)) {
             node->leaf.value = value;
             return false;
@@ -125,19 +130,20 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         }
 
         uint32_t original_hash = hash_fn(node->leaf.key->x, node->leaf.key->len);
-        int original_symbol = hamt_get_symbol(original_hash, lvl);
+        int original_next_symbol = hamt_get_symbol(original_hash, lvl + 1);
 
         hamt_node_t *new_children = (hamt_node_t*) malloc(sizeof(hamt_node_t) * 1);
         new_children[0].leaf.key = node->leaf.key;
         new_children[0].leaf.value = node->leaf.value;
+        assert(is_leaf(&new_children[0]));
 
-        node->sub.bitmap = 1 << original_symbol;
+        node->sub.bitmap = 1 << original_next_symbol;
         node->sub.children = (hamt_node_t*) ((int) new_children | HAMT_NODE_T_FLAG);
 
-        return hamt_node_insert(node, hash, lvl + 1, key, value, hash_fn);
+        return hamt_node_insert(node, hash, lvl, key, value, hash_fn);
     }
 
-    printf("inserting key %.*s into subnode with %d children\n", key->len, (char*) key->x, __builtin_popcount(node->sub.bitmap));
+    printf("%d. inserting key %.*s into subnode with %d children\n", lvl, key->len, (char*) key->x, __builtin_popcount(node->sub.bitmap));
 
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
@@ -166,6 +172,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 
         new_children[i].leaf.key = key;
         new_children[i].leaf.value = value;
+        assert(is_leaf(&new_children[i]));
 
         for (; i < children_size; i++)
             new_children[i + 1] = children[i];
@@ -303,9 +310,12 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 
 thing_t *hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
-    key_value_t *found = hamt_node_search(trie->root, hash, 0, key);
-    if (found != NULL)
-        return found->value;
+    if (trie->size > 0) {
+        key_value_t *found = hamt_node_search(trie->root, hash, 0, key);
+        if (found != NULL)
+            return found->value;
+    }
+
     return NULL;
 }
 
