@@ -84,6 +84,13 @@ bool is_leaf(hamt_node_t *node) {
 key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     assert(node != NULL);
 
+    if (is_leaf(node)) {
+        if (thing_equals(node->leaf.key, key))
+            return (key_value_t*) node;
+        else
+            return NULL;
+    }
+
     hamt_node_t **children = get_children_pointer(node);
     int symbol = _hamt_get_symbol(hash, lvl);
     int shifted = node->sub.bitmap >> symbol;
@@ -94,12 +101,7 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
-
-        if (is_leaf(subnode)) {
-            if (thing_equals(subnode->leaf.key, key))
-                return (key_value_t*) subnode;
-        } else
-            return hamt_node_search(subnode, hash, lvl + 1, key);
+        return hamt_node_search(subnode, hash, lvl + 1, key);
     }
 
     return NULL;
