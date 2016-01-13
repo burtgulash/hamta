@@ -43,10 +43,11 @@ static char *test_hamta() {
     mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
 
     key_value_t *found;
-    thing_t *searching_for;
+    thing_t *searching_for, *removing;
     thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos, &bro, &b, &bubakov};
     int len = sizeof(s) / sizeof(thing_t*);
 
+    DEBUG_PRINT("\nSEARCHING FOR %d ELEMENTS\n", len);
     for (int i = 0; i < len; i++) {
         searching_for = s[i];
         found = hamt_search(h, searching_for);
@@ -56,34 +57,25 @@ static char *test_hamta() {
         mu_assert("error, didn't find the correct key", (strcmp(found->key->x, searching_for->x)) == 0);
     }
 
-    // Now remove some elements
-    #ifdef DEBUG
-    hamt_print(h);
-    #endif
-
+    // Now remove the elements
     mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
 
-    hamt_remove(h, &bro);
-    mu_assert("error, hamt size doesn't match after 1. removal", hamt_size(h) == --num_elements);
-
-    hamt_remove(h, &b);
-    mu_assert("error, hamt size doesn't match after 2. removal", hamt_size(h) == --num_elements);
-
-    hamt_remove(h, &bubakov);
-    mu_assert("error, hamt size doesn't match after 3. removal", hamt_size(h) == --num_elements);
-
-    hamt_remove(h, &kokos);
-    mu_assert("error, hamt size doesn't match after 4. removal", hamt_size(h) == --num_elements);
-
-    hamt_remove(h, &losos);
-    mu_assert("error, hamt size doesn't match after 5. removal", hamt_size(h) == --num_elements);
-
-    hamt_remove(h, &banan);
-    mu_assert("error, hamt size doesn't match after 5. removal", hamt_size(h) == --num_elements);
-
+    DEBUG_PRINT("\nREMOVING %d ELEMENTS\n", len);
     #ifdef DEBUG
     hamt_print(h);
     #endif
+    for (int i = 0; i < len; i++) {
+        removing = s[i];
+        DEBUG_PRINT("removing key %s\n", (char*) removing->x);
+
+        found = hamt_remove(h, removing);
+        #ifdef DEBUG
+        hamt_print(h);
+        #endif
+
+        mu_assert("error, hamt size doesn't match after removal", hamt_size(h) == --num_elements);
+        mu_assert("error, didn't delete the correct key", (strcmp(found->key->x, removing->x)) == 0);
+    }
 
     return NULL;
 }
