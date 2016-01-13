@@ -177,7 +177,7 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key)) {
                 int children_size = __builtin_popcount(node->sub.bitmap);
-                assert(children_size > 1);
+                assert(lvl > 0 && children_size > 1 || lvl == 0);
 
                 // clear the leaf's bit
                 node->sub.bitmap &= ~(1 << symbol);
@@ -200,15 +200,17 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
             removed_node = hamt_node_remove(subnode, hash, lvl + 1, key);
     }
 
-    int children_size = __builtin_popcount(node->sub.bitmap);
-    if (removed_node != NULL && children_size < 2) {
-        // If children array would contain only one element after node removal,
-        // then collapse this single element array one level up to a single
-        // key_value node
-        assert(children_size == 1);
-        hamt_node_t *only_remaining_child = children[0];
-        if (is_leaf(only_remaining_child))
-            *node = *only_remaining_child;
+    if (removed_node != NULL) {
+        int children_size = __builtin_popcount(node->sub.bitmap);
+        if (lvl > 0 && children_size < 2) {
+            // If children array would contain only one element after node removal,
+            // then collapse this single element array one level up to a single
+            // key_value node
+            assert(children_size == 1);
+            hamt_node_t *only_remaining_child = children[0];
+            if (is_leaf(only_remaining_child))
+                *node = *only_remaining_child;
+        }
     }
 
     return removed_node;
@@ -222,8 +224,8 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
         key_value_t *leaf = (key_value_t*) node;
 
         // Switch these two print lines to print either hex characters or strings
-        //printf("{%s -> %s}\n", (char*) leaf->key->x, (char*) leaf->value->x);
-        printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
+        printf("{%s -> %s}\n", (char*) leaf->key->x, (char*) leaf->value->x);
+        //printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
     } else {
         int children_size = __builtin_popcount(node->sub.bitmap);
         hamt_node_t **children = get_children_pointer(node);

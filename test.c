@@ -64,7 +64,7 @@ static char *test_hamta() {
     #ifdef DEBUG
     hamt_print(h);
     #endif
-    for (int i = 0; i < len - 1; i++) { // TODO Notice the temporary  len - 1
+    for (int i = 0; i < len; i++) {
         removing = s[i];
         DEBUG_PRINT("removing key %s\n", (char*) removing->x);
 
