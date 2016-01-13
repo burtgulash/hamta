@@ -7,6 +7,27 @@
 
 #define CHUNK_SIZE 5
 
+// do not change macro of these values!  objects's last bit will be set to 1 if
+// it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
+// will align to some multiple of even number.
+#define KEY_VALUE_T_FLAG 0 // values can be NULL, so keep in this way
+#define HAMT_NODE_T_FLAG 1
+
+
+union hamt_node_;
+typedef struct sub_node_ {
+    uint32_t bitmap;
+    union hamt_node_ **children;
+} sub_node_t;
+
+typedef union hamt_node_ {
+    key_value_t leaf;
+    sub_node_t sub;
+} hamt_node_t;
+
+
+
+
 bool thing_equals(thing_t *a, thing_t *b) {
     if (a->len != b->len)
         return false;
@@ -17,7 +38,7 @@ bool thing_equals(thing_t *a, thing_t *b) {
 }
 
 // FNV-1 Hash function
-uint32_t fnv1(void *key, size_t len) {
+uint32_t hamt_fnv1_hash(void *key, size_t len) {
     uint32_t hash = 2166136261;
     for (size_t i = 0; i < len; i++) {
         hash *= 16777619;
@@ -121,7 +142,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
             if (thing_equals(subnode->leaf.key, key))
                 return false;
 
-            uint32_t original_hash = fnv1(subnode->leaf.key->x, subnode->leaf.key->len);
+            uint32_t original_hash = hamt_fnv1_hash(subnode->leaf.key->x, subnode->leaf.key->len);
             int subnode_symbol = _hamt_get_symbol(original_hash, lvl + 1);
             hamt_node_t *new_subnode = _hamt_make_subnode((key_value_t*) subnode, subnode_symbol);
 
@@ -250,7 +271,7 @@ int hamt_size(hamt_t *trie) {
 }
 
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
-    uint32_t hash = fnv1(key->x, key->len);
+    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
     bool inserted = false;
 
     if (trie->size == 0) {
@@ -268,12 +289,12 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 }
 
 key_value_t* hamt_search(hamt_t *trie, thing_t *key) {
-    uint32_t hash = fnv1(key->x, key->len);
+    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
     return hamt_node_search(trie->root, hash, 0, key);
 }
 
 key_value_t* hamt_remove(hamt_t *trie, thing_t *key) {
-    uint32_t hash = fnv1(key->x, key->len);
+    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
     key_value_t *removed_node = hamt_node_remove(trie->root, hash, 0, key);
     if (removed_node != NULL)
         trie->size--;

@@ -3,47 +3,34 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// do not change macro of these values!  objects's last bit will be set to 1 if
-// it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
-// will align to some multiple of even number.
-#define KEY_VALUE_T_FLAG 0 // values can be NULL, so keep in this way
-#define HAMT_NODE_T_FLAG 1
+uint32_t hamt_fnv1_hash(void *key, size_t len);
+
 
 typedef struct {
     void *x;
     size_t len;
 } thing_t;
 
+bool thing_equals(thing_t *a, thing_t *b);
 
-union _hamt_node;
 
 typedef struct {
     thing_t *key;
     thing_t *value;
 } key_value_t;
 
+union hamt_node_;
 typedef struct {
-    uint32_t bitmap;
-    union _hamt_node **children;
-} sub_node_t;
-
-typedef union _hamt_node {
-    key_value_t leaf;
-    sub_node_t sub;
-} hamt_node_t;
-
-typedef struct {
-    hamt_node_t *root;
+    union hamt_node_ *root;
     int size;
 } hamt_t;
 
+
 hamt_t* new_hamt();
+int hamt_size(hamt_t *trie);
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
 key_value_t* hamt_search(hamt_t *trie, thing_t *key);
 key_value_t* hamt_remove(hamt_t *trie, thing_t *key);
-int hamt_size(hamt_t *trie);
 void hamt_print(hamt_t *trie);
-
-uint32_t fnv1(void *key, size_t len);
 
 #endif
