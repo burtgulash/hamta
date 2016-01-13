@@ -39,7 +39,8 @@ static char *test_hamta() {
     hamt_insert(h, &b, &bubakov);
     hamt_insert(h, &bubakov, &aut);
 
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == 9);
+    int num_elements = 9;
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
 
     key_value_t *found;
     thing_t *searching_for;
@@ -54,6 +55,35 @@ static char *test_hamta() {
         mu_assert("error, not found", found != NULL);
         mu_assert("error, didn't find the correct key", (strcmp(found->key->x, searching_for->x)) == 0);
     }
+
+    // Now remove some elements
+    #ifdef DEBUG
+    hamt_print(h);
+    #endif
+
+    mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
+
+    hamt_remove(h, &bro);
+    mu_assert("error, hamt size doesn't match after 1. removal", hamt_size(h) == --num_elements);
+
+    hamt_remove(h, &b);
+    mu_assert("error, hamt size doesn't match after 2. removal", hamt_size(h) == --num_elements);
+
+    hamt_remove(h, &bubakov);
+    mu_assert("error, hamt size doesn't match after 3. removal", hamt_size(h) == --num_elements);
+
+    hamt_remove(h, &kokos);
+    mu_assert("error, hamt size doesn't match after 4. removal", hamt_size(h) == --num_elements);
+
+    hamt_remove(h, &losos);
+    mu_assert("error, hamt size doesn't match after 5. removal", hamt_size(h) == --num_elements);
+
+    hamt_remove(h, &banan);
+    mu_assert("error, hamt size doesn't match after 5. removal", hamt_size(h) == --num_elements);
+
+    #ifdef DEBUG
+    hamt_print(h);
+    #endif
 
     return NULL;
 }
@@ -96,8 +126,8 @@ static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_foo);
-    mu_run_test(test_hamta);
     mu_run_test(test_hamta2);
+    mu_run_test(test_hamta);
 
     return NULL;
 }
