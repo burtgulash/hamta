@@ -176,7 +176,7 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key)) {
                 int children_size = __builtin_popcount(node->sub.bitmap);
-                assert(children_size > 0);
+                assert(children_size > 1);
 
                 // clear the leaf's bit
                 node->sub.bitmap &= ~(1 << symbol);
