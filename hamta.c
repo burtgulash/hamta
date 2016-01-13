@@ -202,7 +202,8 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 
                 // clear the leaf's bit
                 node->sub.bitmap &= ~(1 << symbol);
-                hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size - 1));
+                children_size--;
+                hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * children_size);
 
                 int i;
                 for (i = 0; i < child_position; i++)
@@ -238,6 +239,7 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 }
 
 void hamt_node_destroy(hamt_node_t *node) {
+    assert(node != NULL);
     if (!is_leaf(node)) {
         hamt_node_t **children = get_children_pointer(node);
 
@@ -273,9 +275,9 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
 // HAMTa constructor
 hamt_t *new_hamt(hash_fn_t hash_fn) {
     hamt_t *h = (hamt_t*) malloc(sizeof(hamt_t));
-    assert(h);
+    assert(h != NULL);
 
-    h->root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
+    h->root = NULL;
     h->size = 0;
     h->hash_fn = hash_fn;
 
@@ -325,10 +327,8 @@ thing_t *hamt_remove(hamt_t *trie, thing_t *key) {
 }
 
 void hamt_destroy(hamt_t *trie) {
-    if (trie->size == 0)
-        return;
-
-    hamt_node_destroy(trie->root);
+    if (trie->size > 0)
+        hamt_node_destroy(trie->root);
     free(trie);
 }
 
