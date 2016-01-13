@@ -75,16 +75,6 @@ bool is_leaf(hamt_node_t *node) {
     return (children_ptr & 1) == KEY_VALUE_T_FLAG;
 }
 
-hamt_node_t* new_kv(thing_t *key, thing_t *value) {
-    hamt_node_t *kv = (hamt_node_t*) malloc(sizeof(hamt_node_t));
-    kv->leaf.key = key;
-    kv->leaf.value = value;
-
-    assert(is_leaf(kv));
-    return kv;
-}
-
-
 key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     assert(node != NULL);
 
