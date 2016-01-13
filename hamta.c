@@ -81,20 +81,18 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
     if (is_leaf(node)) {
         if (thing_equals(node->leaf.key, key))
             return (key_value_t*) node;
-        else
-            return NULL;
-    }
+    } else {
+        hamt_node_t *children = get_children_pointer(node);
+        int symbol = hamt_get_symbol(hash, lvl);
+        int shifted = node->sub.bitmap >> symbol;
+        bool child_exists = shifted & 1;
 
-    hamt_node_t *children = get_children_pointer(node);
-    int symbol = hamt_get_symbol(hash, lvl);
-    int shifted = node->sub.bitmap >> symbol;
-    bool child_exists = shifted & 1;
-
-    if (child_exists) {
-        // position of child is popcount of 1-bits to the left of bitmap at
-        // keyed position
-        int child_position = __builtin_popcount(shifted >> 1);
-        return hamt_node_search(&children[child_position], hash, lvl + 1, key);
+        if (child_exists) {
+            // position of child is popcount of 1-bits to the left of bitmap at
+            // keyed position
+            int child_position = __builtin_popcount(shifted >> 1);
+            return hamt_node_search(&children[child_position], hash, lvl + 1, key);
+        }
     }
 
     return NULL;
