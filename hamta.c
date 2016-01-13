@@ -61,10 +61,10 @@ int _hamt_get_symbol(uint32_t hash, int lvl) {
     return symbol;
 }
 
-key_value_t* new_kv(thing_t *key, thing_t *value) {
-    key_value_t *kv = (key_value_t*) malloc(sizeof(key_value_t));
-    kv->key = key;
-    kv->value = value;
+hamt_node_t* new_kv(thing_t *key, thing_t *value) {
+    hamt_node_t *kv = (hamt_node_t*) malloc(sizeof(hamt_node_t));
+    kv->leaf.key = key;
+    kv->leaf.value = value;
     return kv;
 }
 
@@ -106,14 +106,16 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 }
 
 // TODO should it be key_value_t or hamt_node_t in arguments?
-hamt_node_t* _hamt_make_subnode(key_value_t *first_child, int symbol) {
+hamt_node_t* _hamt_make_subnode(hamt_node_t *first_child, int symbol) {
+    assert(is_leaf(first_child));
+
     hamt_node_t *new_subnode = (hamt_node_t*) malloc(sizeof(hamt_node_t));
     // set first bit
     new_subnode->sub.bitmap = 1 << symbol;
     // make children array of size one for only the original node
     new_subnode->sub.children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * 1);
     // copy over original conflicting key_value
-    new_subnode->sub.children[0] = (hamt_node_t*) first_child;
+    new_subnode->sub.children[0] = first_child;
     // set the type flag
     new_subnode->sub.children = (hamt_node_t**) ((int) (new_subnode->sub.children) | HAMT_NODE_T_FLAG);
     return new_subnode;
@@ -139,12 +141,12 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
             // case: conflict with another key_value
 
             // key already inside, exit
-            if (thing_equals(subnode->leaf.key, key))
+            if (thing_equals(subnode->leaf.key, key)) // TODO override the existing key instead
                 return false;
 
             uint32_t original_hash = hash_fn(subnode->leaf.key->x, subnode->leaf.key->len);
             int subnode_symbol = _hamt_get_symbol(original_hash, lvl + 1);
-            hamt_node_t *new_subnode = _hamt_make_subnode((key_value_t*) subnode, subnode_symbol);
+            hamt_node_t *new_subnode = _hamt_make_subnode(subnode, subnode_symbol);
 
             // set parent's child to new_subnode
             children[child_position] = new_subnode;
@@ -158,7 +160,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         int children_size = __builtin_popcount(node->sub.bitmap);
         int children_before = __builtin_popcount(shifted >> 1);
 
-        key_value_t *new_leaf = new_kv(key, value);
+        hamt_node_t *new_leaf = new_kv(key, value);
 
         // set new bit
         node->sub.bitmap |= 1 << symbol;
@@ -169,7 +171,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         for (i = 0; i < children_before; i++)
             new_children[i] = children[i];
 
-        new_children[i] = (hamt_node_t*) new_leaf;
+        new_children[i] = new_leaf;
         for (; i < children_size; i++)
             new_children[i + 1] = children[i];
 
@@ -203,20 +205,24 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
                 // clear the leaf's bit
                 node->sub.bitmap &= ~(1 << symbol);
                 children_size--;
-                hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * children_size);
 
-                int i;
-                for (i = 0; i < child_position; i++)
-                    new_children[i] = children[i];
-                for (; i < children_size; i++)
-                    new_children[i] = children[i + 1];
+                removed_node = leaf;
+
+                hamt_node_t **new_children = NULL;
+                if (children_size > 0) {
+                    new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * children_size);
+
+                    int i;
+                    for (i = 0; i < child_position; i++)
+                        new_children[i] = children[i];
+                    for (; i < children_size; i++)
+                        new_children[i] = children[i + 1];
+                }
 
                 // free the old array and set HAMT_NODE_T_FLAG in the new pointer
                 free(children);
                 node->sub.children = (hamt_node_t**) ((int) new_children | HAMT_NODE_T_FLAG);
                 children = new_children;
-
-                removed_node = leaf;
             }
         } else
             removed_node = hamt_node_remove(subnode, hash, lvl + 1, key);
@@ -293,7 +299,7 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     bool inserted = false;
 
     if (trie->size == 0) {
-        key_value_t *new_leaf = new_kv(key, value);
+        hamt_node_t *new_leaf = new_kv(key, value);
 
         int symbol = hash >> (32 - CHUNK_SIZE);
         trie->root = _hamt_make_subnode(new_leaf, symbol);

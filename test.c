@@ -3,22 +3,27 @@
 #include "include/minunit.h"
 #include "hamta.h"
 
-int foo = 7;
-
-static char *test_foo() {
-    mu_assert("error, foo != 7", foo == 7);
-    return NULL;
-}
 
 static char *test_create() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
     mu_assert("error, hamt not initialized", h != NULL);
 
+    thing_t x = { .x="x", .len=1 };
+    thing_t y = { .x="y", .len=1 };
+
+    hamt_insert(h, &x, &x);
+    //hamt_insert(h, &y, &y);
+    //hamt_insert(h, &x, &y);
+    //hamt_insert(h, &y, &x);
+
+    hamt_remove(h, &x);
+
     hamt_destroy(h);
+
     return NULL;
 }
 
-static char *test_hamta() {
+static char *test_search_destroy() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
 
     thing_t aut = { .x = "aut", .len = 3 };
@@ -126,9 +131,8 @@ static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_create);
-    mu_run_test(test_foo);
     mu_run_test(test_hamta2);
-    //mu_run_test(test_hamta);
+    mu_run_test(test_search_destroy);
 
     return NULL;
 }
