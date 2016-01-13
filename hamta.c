@@ -100,15 +100,14 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
         // position of child is popcount of 1-bits to the left of bitmap at
         // keyed position
         int child_position = __builtin_popcount(shifted >> 1);
-        hamt_node_t *subnode = children[child_position];
-        return hamt_node_search(subnode, hash, lvl + 1, key);
+        return hamt_node_search(children[child_position], hash, lvl + 1, key);
     }
 
     return NULL;
 }
 
 // TODO should it be key_value_t or hamt_node_t in arguments?
-hamt_node_t* _hamt_make_subnode(hamt_node_t *first_child, int symbol) {
+hamt_node_t* hamt_make_subnode(hamt_node_t *first_child, int symbol) {
     assert(is_leaf(first_child));
 
     hamt_node_t *new_subnode = (hamt_node_t*) malloc(sizeof(hamt_node_t));
@@ -148,7 +147,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 
             uint32_t original_hash = hash_fn(subnode->leaf.key->x, subnode->leaf.key->len);
             int subnode_symbol = _hamt_get_symbol(original_hash, lvl + 1);
-            hamt_node_t *new_subnode = _hamt_make_subnode(subnode, subnode_symbol);
+            hamt_node_t *new_subnode = hamt_make_subnode(subnode, subnode_symbol);
 
             // set parent's child to new_subnode
             children[child_position] = new_subnode;
@@ -304,7 +303,7 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
         hamt_node_t *new_leaf = new_kv(key, value);
 
         int symbol = hash >> (32 - CHUNK_SIZE);
-        trie->root = _hamt_make_subnode(new_leaf, symbol);
+        trie->root = hamt_make_subnode(new_leaf, symbol);
 
         inserted = true;
     } else
