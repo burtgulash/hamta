@@ -12,9 +12,11 @@ static char *test_create() {
     thing_t y = { .x="yy", .len=2 };
 
     hamt_insert(h, &x, &x);
-    hamt_insert(h, &y, &y);
-    hamt_insert(h, &x, &y);
-    hamt_insert(h, &y, &x);
+    //hamt_insert(h, &y, &y);
+    //hamt_insert(h, &x, &y);
+    //hamt_insert(h, &y, &x);
+
+    //hamt_remove(h, &x);
 
     hamt_destroy(h);
 
@@ -50,6 +52,7 @@ static char *test_search_destroy() {
     thing_t *found;
     thing_t *searching_for, *removing;
     thing_t *s[] = {&losos, &bus, &aut, &vlak, &banan, &kokos, &bro, &b, &bubakov};
+    bool removed = false;
     int len = sizeof(s) / sizeof(thing_t*);
 
     DEBUG_PRINT("\nSEARCHING FOR %d ELEMENTS\n", len);
@@ -76,15 +79,14 @@ static char *test_search_destroy() {
         removing = s[i];
         DEBUG_PRINT("removing key %s\n", (char*) removing->x);
 
-        found = hamt_remove(h, removing);
-        mu_assert("error, returned element is NULL", found != NULL);
+        removed = hamt_remove(h, removing);
+        mu_assert("error, returned element is NULL", removed == true);
 
         #ifdef DEBUG
         hamt_print(h);
         #endif
 
         mu_assert("error, hamt size doesn't match after removal", hamt_size(h) == --num_elements);
-        mu_assert("error, didn't delete the correct key", (strcmp(found->x, removing->x)) == 0);
     }
 
     hamt_destroy(h);
