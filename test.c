@@ -132,8 +132,8 @@ static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_create);
-    //mu_run_test(test_hamta2);
-    //mu_run_test(test_search_destroy);
+    mu_run_test(test_hamta2);
+    mu_run_test(test_search_destroy);
 
     return NULL;
 }
