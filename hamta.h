@@ -26,11 +26,11 @@ typedef struct {
 } hamt_t;
 
 
-hamt_t* new_hamt();
+hamt_t *new_hamt();
 int hamt_size(hamt_t *trie);
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
-key_value_t* hamt_search(hamt_t *trie, thing_t *key);
-key_value_t* hamt_remove(hamt_t *trie, thing_t *key);
+thing_t *hamt_search(hamt_t *trie, thing_t *key);
+thing_t *hamt_remove(hamt_t *trie, thing_t *key);
 void hamt_print(hamt_t *trie);
 
 #endif

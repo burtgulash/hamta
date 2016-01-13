@@ -288,17 +288,24 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
         trie->size++;
 }
 
-key_value_t* hamt_search(hamt_t *trie, thing_t *key) {
+thing_t *hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = hamt_fnv1_hash(key->x, key->len);
-    return hamt_node_search(trie->root, hash, 0, key);
+    key_value_t *found = hamt_node_search(trie->root, hash, 0, key);
+    return found->value;
 }
 
-key_value_t* hamt_remove(hamt_t *trie, thing_t *key) {
+thing_t *hamt_remove(hamt_t *trie, thing_t *key) {
     uint32_t hash = hamt_fnv1_hash(key->x, key->len);
     key_value_t *removed_node = hamt_node_remove(trie->root, hash, 0, key);
-    if (removed_node != NULL)
+
+    thing_t *retval = NULL;
+    if (removed_node != NULL) {
+        retval = removed_node->value;
         trie->size--;
-    return removed_node;
+    }
+
+    free(removed_node);
+    return retval;
 }
 
 void hamt_print(hamt_t *trie) {
