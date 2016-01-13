@@ -12,11 +12,9 @@ static char *test_create() {
     thing_t y = { .x="y", .len=1 };
 
     hamt_insert(h, &x, &x);
-    //hamt_insert(h, &y, &y);
-    //hamt_insert(h, &x, &y);
-    //hamt_insert(h, &y, &x);
-
-    hamt_remove(h, &x);
+    hamt_insert(h, &y, &y);
+    hamt_insert(h, &x, &y);
+    hamt_insert(h, &y, &x);
 
     hamt_destroy(h);
 
@@ -55,11 +53,14 @@ static char *test_search_destroy() {
     int len = sizeof(s) / sizeof(thing_t*);
 
     DEBUG_PRINT("\nSEARCHING FOR %d ELEMENTS\n", len);
+    #ifdef DEBUG
+    hamt_print(h);
+    #endif
     for (int i = 0; i < len; i++) {
         searching_for = s[i];
+        DEBUG_PRINT("\nsearching for key %s\n", (char*) searching_for->x);
         found = hamt_search(h, searching_for);
 
-        DEBUG_PRINT("searching for key %s\n", (char*) searching_for->x);
         mu_assert("error, not found", found != NULL);
         mu_assert("error, didn't find the correct key", (strcmp(found->x, searching_for->x)) == 0);
     }
@@ -131,8 +132,8 @@ static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_create);
-    mu_run_test(test_hamta2);
-    mu_run_test(test_search_destroy);
+    //mu_run_test(test_hamta2);
+    //mu_run_test(test_search_destroy);
 
     return NULL;
 }
