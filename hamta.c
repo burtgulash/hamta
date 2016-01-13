@@ -324,9 +324,16 @@ thing_t *hamt_search(hamt_t *trie, thing_t *key) {
 
 thing_t *hamt_remove(hamt_t *trie, thing_t *key) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
-    key_value_t *removed_node = hamt_node_remove(trie->root, hash, 0, key);
 
     thing_t *retval = NULL;
+    key_value_t *removed_node = NULL;
+    if (trie->size == 0)
+        return retval;
+    else if (is_leaf(trie->root))
+        removed_node = &trie->root[0].leaf;
+    else
+        removed_node = hamt_node_remove(trie->root, hash, 0, key);
+
     if (removed_node != NULL) {
         retval = removed_node->value;
         trie->size--;
