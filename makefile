@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99
+CFLAGS=-std=c99 -O2
 SRC=$(wildcard *.c)
 
 .PHONY: all test
