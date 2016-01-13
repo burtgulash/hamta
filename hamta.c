@@ -231,8 +231,10 @@ bool hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
         // key_value node
         assert(children_size == 1);
         hamt_node_t *only_remaining_child = &children[0];
-        if (is_leaf(only_remaining_child))
+        if (is_leaf(only_remaining_child)) {
             *node = *only_remaining_child;
+            free(children);
+        }
     }
 
     return removed;
