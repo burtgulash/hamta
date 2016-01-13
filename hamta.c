@@ -265,6 +265,14 @@ key_value_t* hamt_search(hamt_t *trie, thing_t *key) {
     return hamt_node_search(trie->root, hash, 0, key);
 }
 
+key_value_t* hamt_remove(hamt_t *trie, thing_t *key) {
+    uint32_t hash = fnv1(key->x, key->len);
+    key_value_t *removed_node = hamt_node_remove(trie->root, hash, 0, key);
+    if (removed_node != NULL)
+        trie->size--;
+    return removed_node;
+}
+
 void hamt_print(hamt_t *trie) {
     if (trie->size > 0)
         hamt_node_print(trie->root, 0);
