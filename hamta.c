@@ -119,7 +119,7 @@ hamt_node_t* _hamt_make_subnode(key_value_t *first_child, int symbol) {
     return new_subnode;
 }
 
-bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value) {
+bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value, hash_fn_t hash_fn) {
     assert(node != NULL);
     if (lvl * CHUNK_SIZE > 32) {
         assert(false); // TODO make conflict arrays at the floor of the tree
@@ -142,7 +142,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
             if (thing_equals(subnode->leaf.key, key))
                 return false;
 
-            uint32_t original_hash = hamt_fnv1_hash(subnode->leaf.key->x, subnode->leaf.key->len);
+            uint32_t original_hash = hash_fn(subnode->leaf.key->x, subnode->leaf.key->len);
             int subnode_symbol = _hamt_get_symbol(original_hash, lvl + 1);
             hamt_node_t *new_subnode = _hamt_make_subnode((key_value_t*) subnode, subnode_symbol);
 
@@ -151,7 +151,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
             subnode = new_subnode;
         }
 
-        return hamt_node_insert(subnode, hash, lvl + 1, key, value);
+        return hamt_node_insert(subnode, hash, lvl + 1, key, value, hash_fn);
     } else {
         // case: free node
 
@@ -258,11 +258,14 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
 
 
 // HAMTa constructor
-hamt_t* new_hamt() {
+hamt_t *new_hamt(hash_fn_t hash_fn) {
     hamt_t *h = (hamt_t*) malloc(sizeof(hamt_t));
     assert(h);
+
     h->root = (hamt_node_t*) malloc(sizeof(hamt_node_t));
     h->size = 0;
+    h->hash_fn = hash_fn;
+
     return h;
 }
 
@@ -271,7 +274,7 @@ int hamt_size(hamt_t *trie) {
 }
 
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
-    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
+    uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
 
     if (trie->size == 0) {
@@ -282,20 +285,20 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 
         inserted = true;
     } else
-        inserted = hamt_node_insert(trie->root, hash, 0, key, value);
+        inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn);
 
     if (inserted)
         trie->size++;
 }
 
 thing_t *hamt_search(hamt_t *trie, thing_t *key) {
-    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
+    uint32_t hash = trie->hash_fn(key->x, key->len);
     key_value_t *found = hamt_node_search(trie->root, hash, 0, key);
     return found->value;
 }
 
 thing_t *hamt_remove(hamt_t *trie, thing_t *key) {
-    uint32_t hash = hamt_fnv1_hash(key->x, key->len);
+    uint32_t hash = trie->hash_fn(key->x, key->len);
     key_value_t *removed_node = hamt_node_remove(trie->root, hash, 0, key);
 
     thing_t *retval = NULL;

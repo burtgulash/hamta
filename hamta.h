@@ -19,14 +19,16 @@ typedef struct {
     thing_t *value;
 } key_value_t;
 
+typedef uint32_t (*hash_fn_t)(void *key, size_t len);
 union hamt_node_;
 typedef struct {
     union hamt_node_ *root;
     int size;
+    hash_fn_t hash_fn;
 } hamt_t;
 
 
-hamt_t *new_hamt();
+hamt_t *new_hamt(hash_fn_t hash_fn);
 int hamt_size(hamt_t *trie);
 void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
 thing_t *hamt_search(hamt_t *trie, thing_t *key);

@@ -11,13 +11,13 @@ static char *test_foo() {
 }
 
 static char *test_create() {
-    hamt_t *h = new_hamt();
+    hamt_t *h = new_hamt(hamt_fnv1_hash);
     mu_assert("error, hamt not initialized", h != NULL);
     return NULL;
 }
 
 static char *test_hamta() {
-    hamt_t *h = new_hamt();
+    hamt_t *h = new_hamt(hamt_fnv1_hash);
 
     thing_t aut = { .x = "aut", .len = 3 };
     thing_t bus = { .x = "bus", .len = 3 };
@@ -83,7 +83,7 @@ static char *test_hamta() {
 }
 
 static char *test_hamta2() {
-    hamt_t *h = new_hamt();
+    hamt_t *h = new_hamt(hamt_fnv1_hash);
 
     thing_t z[] = { {.x="a",        .len=1},
                     {.x="bb",       .len=2},
