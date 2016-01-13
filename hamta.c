@@ -156,6 +156,10 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
     }
 }
 
+bool is_leaf(hamt_node_t *node) {
+    int children_ptr = (int) (node->sub.children);
+    return (children_ptr & 1) == 0;
+}
 
 key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     assert(node != NULL);
@@ -165,6 +169,7 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
     int shifted = (node->sub.bitmap) >> symbol;
     bool child_exists = shifted & 1;
 
+    key_value_t *removed_node = NULL;
     if (child_exists) {
         int child_position = __builtin_popcount(shifted >> 1);
         hamt_node_t *subnode = children[child_position];
@@ -174,36 +179,39 @@ key_value_t* hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t
             key_value_t *leaf = (key_value_t*) subnode;
             if (thing_equals(leaf->key, key)) {
                 int children_size = __builtin_popcount(node->sub.bitmap);
-                if (children_size > 2) {
-                    // clear the leaf's bit
-                    node->sub.bitmap &= ~(1 << symbol);
-                    hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size - 1));
+                assert(children_size > 0);
 
-                    int i;
-                    for (i = 0; i < child_position; i++)
-                        new_children[i] = children[i];
-                    for (; i < children_size; i++)
-                        new_children[i] = children[i + 1];
+                // clear the leaf's bit
+                node->sub.bitmap &= ~(1 << symbol);
+                hamt_node_t **new_children = (hamt_node_t**) malloc(sizeof(hamt_node_t*) * (children_size - 1));
 
-                    // free the old array and set HAMT_NODE_T_FLAG in the new pointer
-                    free(children);
-                    node->sub.children = (hamt_node_t**) ((int) new_children | HAMT_NODE_T_FLAG);
-                } else {
-                    assert(children_size == 2);
-                    // TODO now there are exactly 2 nodes in the children
-                    // array. After removing 1 of them, the array contains only
-                    // 1 element, which can be collapsed back to a simple
-                    // key_value in the parent array.
-                    // However this collapsing might continue as far as to the root.
-                }
+                int i;
+                for (i = 0; i < child_position; i++)
+                    new_children[i] = children[i];
+                for (; i < children_size; i++)
+                    new_children[i] = children[i + 1];
 
-                return leaf;
+                // free the old array and set HAMT_NODE_T_FLAG in the new pointer
+                free(children);
+                node->sub.children = (hamt_node_t**) ((int) new_children | HAMT_NODE_T_FLAG);
+
+                removed_node = leaf;
             }
         } else
-            return hamt_node_remove(subnode, hash, lvl + 1, key);
+            removed_node = hamt_node_remove(subnode, hash, lvl + 1, key);
     }
 
-    return NULL;
+    int children_size = __builtin_popcount(node->sub.bitmap);
+    if (removed_node != NULL && children_size < 2) {
+        // If children array after node removal would contain only one
+        // element, then collapse it one level up
+        assert(children_size == 1);
+        hamt_node_t *only_remaining_child = children[0];
+        if (is_leaf(only_remaining_child))
+            *node = *only_remaining_child;
+    }
+
+    return removed_node;
 }
 
 void hamt_node_print(hamt_node_t *node, int lvl) {
