@@ -220,6 +220,9 @@ void hamt_node_print(hamt_node_t *node, int lvl) {
 
     if (is_leaf(node)) {
         key_value_t *leaf = (key_value_t*) node;
+
+        // Switch these two print lines to print either hex characters or strings
+        //printf("{%s -> %s}\n", (char*) leaf->key->x, (char*) leaf->value->x);
         printf("{%0*x -> %0*x}\n", leaf->key->len, (int) leaf->key->x, leaf->value->len, (int) leaf->value->x);
     } else {
         int children_size = __builtin_popcount(node->sub.bitmap);
