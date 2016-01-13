@@ -49,7 +49,7 @@ static char *test_search_destroy() {
 
     thing_t *found;
     thing_t *searching_for, *removing;
-    thing_t *s[] = {&aut, &bus, &vlak, &kokos, &banan, &losos, &bro, &b, &bubakov};
+    thing_t *s[] = {&losos, &bus, &aut, &vlak, &banan, &kokos, &bro, &b, &bubakov};
     int len = sizeof(s) / sizeof(thing_t*);
 
     DEBUG_PRINT("\nSEARCHING FOR %d ELEMENTS\n", len);

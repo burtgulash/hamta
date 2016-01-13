@@ -130,9 +130,11 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         }
 
         uint32_t original_hash = hash_fn(node->leaf.key->x, node->leaf.key->len);
-        int original_next_symbol = hamt_get_symbol(original_hash, lvl + 1);
+        int original_next_symbol = hamt_get_symbol(original_hash, lvl);
 
         hamt_node_t *new_children = (hamt_node_t*) malloc(sizeof(hamt_node_t) * 1);
+        thing_t *tmp = node->leaf.key;
+        printf("tmp1 %08x\n", (int) tmp);
         new_children[0].leaf.key = node->leaf.key;
         new_children[0].leaf.value = node->leaf.value;
         assert(is_leaf(&new_children[0]));
@@ -140,6 +142,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         node->sub.bitmap = 1 << original_next_symbol;
         node->sub.children = (hamt_node_t*) ((int) new_children | HAMT_NODE_T_FLAG);
 
+        printf("tmp %08x\n\n", (int) tmp);
         return hamt_node_insert(node, hash, lvl, key, value, hash_fn);
     }
 
