@@ -12,4 +12,4 @@ cdef extern from "hamta.h":
     int hamt_size(hamt_t *h)
     thing_t *hamt_search(hamt_t *h, thing_t *key)
     thing_t *hamt_remove(hamt_t *h, thing_t *key)
-    void hamt_insert(hamt_t *h, thing_t *key, thing_t *value)
+    bint hamt_insert(hamt_t *h, thing_t *key, thing_t *value)

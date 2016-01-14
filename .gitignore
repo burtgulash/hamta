@@ -4,3 +4,4 @@
 bin
 hamta/build
 hamta/*.so
+hamta/*.c
