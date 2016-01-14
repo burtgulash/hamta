@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -O3
+CFLAGS=-std=c99 -O3 -Wall -Wextra -Wshadow
 SRC=$(wildcard lib/*.c)
 INCLUDE=-I./include
 

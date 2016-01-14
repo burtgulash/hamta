@@ -2,3 +2,5 @@
 *.swp
 *.swo
 bin
+hamta/build
+hamta/*.so

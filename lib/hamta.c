@@ -99,8 +99,6 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 }
 
 bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value, hash_fn_t hash_fn) {
-    assert(lvl > 0 && node != NULL || lvl == 0);
-
     if (lvl * CHUNK_SIZE > 32) {
         assert(false); // TODO make conflict arrays at the floor of the tree
         return false;
@@ -117,7 +115,6 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         int original_next_symbol = hamt_get_symbol(original_hash, lvl);
 
         hamt_node_t *new_children = (hamt_node_t*) malloc(sizeof(hamt_node_t) * 1);
-        thing_t *tmp = node->leaf.key;
         new_children[0].leaf.key = node->leaf.key;
         new_children[0].leaf.value = node->leaf.value;
         assert(is_leaf(&new_children[0]));
