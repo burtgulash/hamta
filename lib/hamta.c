@@ -33,10 +33,7 @@ bool thing_equals(thing_t *a, thing_t *b) {
         return a == b;
     if (a->len != b->len)
         return false;
-    for (size_t i = 0; i < a->len; i++)
-        if (((char*) a)[i] != ((char*) b)[i])
-            return false;
-    return true;
+    return memcmp(a->x, b->x, a->len) == 0;
 }
 
 // FNV-1 Hash function
@@ -59,7 +56,7 @@ int hamt_get_symbol(uint32_t hash, int lvl) {
 
     uint32_t symbol = (hash << left) >> (right + left);
 
-    assert(0 <= symbol && symbol < 32);
+    assert(symbol < 32);
     return symbol;
 }
 
