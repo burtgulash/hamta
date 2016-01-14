@@ -10,7 +10,7 @@ bin/libhamta.so: $(SRC)
 	$(CC) $(INCLUDE) -shared -fpic -o $@ $^ $(CFLAGS)
 
 bin/test_runner: test/test.c bin/libhamta.so
-	$(CC) $(INCLUDE) -L. -Wl,-rpath=. -o $@ $< -lhamta $(CFLAGS) -DDEBUG
+	$(CC) $(INCLUDE) -L./bin -Wl,-rpath=./bin -o $@ $< -lhamta $(CFLAGS) -DDEBUG
 
 test: bin/test_runner
 	./bin/test_runner
