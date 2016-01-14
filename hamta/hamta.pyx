@@ -1,5 +1,6 @@
-from cpython cimport Py_INCREF, Py_DECREF
-from libc cimport stdlib
+from cpython cimport Py_INCREF, Py_DECREF, PyObject
+from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy
 cimport c_hamta
 
 cdef class Hamt:
@@ -10,21 +11,37 @@ cdef class Hamt:
         if self._c_hamt is NULL:
             raise MemoryError()
 
-    def __setitem__(self, int key, object value):
-        cdef c_hamta.thing_t *k = <c_hamta.thing_t*> stdlib.malloc(sizeof(c_hamta.thing_t))
-        cdef c_hamta.thing_t *v = <c_hamta.thing_t*> stdlib.malloc(sizeof(c_hamta.thing_t))
+    def __len__(self):
+        return c_hamta.hamt_size(self._c_hamt)
+
+    def __setitem__(self, int key, int value):
+        cdef c_hamta.thing_t* k = <c_hamta.thing_t*> malloc(sizeof(c_hamta.thing_t))
+        cdef c_hamta.thing_t* v = <c_hamta.thing_t*> malloc(sizeof(c_hamta.thing_t))
         if not k or not v:
             raise MemoryError()
 
-        k[0] = c_hamta.thing_t(key, sizeof(int))
-        v[0] = c_hamta.thing_t(<void*> value, sizeof(void*))
+        cdef void* k_mem = <void*> malloc(sizeof(int))
+        cdef void* v_mem = <void*> malloc(sizeof(int))
+        if not k_mem or v_mem:
+            raise MemoryError()
 
-        Py_INCREF(value)
+        memcpy(k_mem, &key, sizeof(int))
+        memcpy(v_mem, &value, sizeof(int))
 
-        cdef bint inserted = c_hamta.hamt_insert(self._c_hamt, k, v)
-        if not inserted:
-            stdlib.free(v);
-            Py_DECREF(value)
+        k.x = k_mem
+        k.len = sizeof(int)
+
+        v.x = v_mem
+        v.len = sizeof(int)
+
+        cdef c_hamta.key_value_t original_kv
+        cdef bint replaced_old_value = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
+
+        if replaced_old_value:
+            free(original_kv.key.x)
+            free(original_kv.key)
+            free(original_kv.value.x)
+            free(original_kv.value)
 
 
     def __dealloc__(self):

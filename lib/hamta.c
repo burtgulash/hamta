@@ -285,6 +285,7 @@ int hamt_size(hamt_t *trie) {
 }
 
 
+// return true if original_kv key and value needs to be deallocated
 bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_kv) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
@@ -295,14 +296,15 @@ bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_
 
     inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn, original_kv);
 
-    if (trie->size == 0)
-        // on first insert it always succeeds, because it only overrides the sentinel node
-        inserted = true;
+    if (trie->size == 0) {
+        trie->size = 1;
+        return false;
+    }
 
     if (inserted)
-        trie->size++;
+        trie->size ++;
 
-    return inserted;
+    return !inserted;
 }
 
 
