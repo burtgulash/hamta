@@ -35,12 +35,12 @@ cdef class Hamt:
         v.len = sizeof(int)
 
         cdef c_hamta.key_value_t original_kv
-        cdef bint size_increased = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
+        cdef bint delete_ld = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
 
-        if size_increased:
-            #PyMem_Free(original_kv.key.x)
+        if delete_old:
+            PyMem_Free(original_kv.key.x)
             PyMem_Free(original_kv.key)
-            #PyMem_Free(original_kv.value.x)
+            PyMem_Free(original_kv.value.x)
             PyMem_Free(original_kv.value)
 
     def __getitem__(self, int key):

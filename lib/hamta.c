@@ -57,7 +57,7 @@ int hamt_get_symbol(uint32_t hash, int lvl) {
     if (left_plus_chunk > 32)
         right = 0;
 
-    int symbol = (hash << left) >> (right + left);
+    uint32_t symbol = (hash << left) >> (right + left);
 
     assert(0 <= symbol && symbol < 32);
     return symbol;
@@ -84,7 +84,7 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
     } else {
         hamt_node_t *children = get_children_pointer(node);
         int symbol = hamt_get_symbol(hash, lvl);
-        int shifted = node->sub.bitmap >> symbol;
+        uint32_t shifted = node->sub.bitmap >> symbol;
         bool child_exists = shifted & 1;
 
         if (child_exists) {
@@ -115,6 +115,8 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
             node->leaf.key = key;
             node->leaf.value = value;
 
+            assert(is_leaf(node));
+
             return false;
         }
 
@@ -134,7 +136,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
-    int shifted = (node->sub.bitmap) >> symbol;
+    uint32_t shifted = (node->sub.bitmap) >> symbol;
     bool child_exists = shifted & 1;
 
     if (child_exists) {
@@ -175,7 +177,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 bool hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
-    int shifted = (node->sub.bitmap) >> symbol;
+    uint32_t shifted = (node->sub.bitmap) >> symbol;
     bool child_exists = shifted & 1;
 
     bool removed = false;
@@ -285,26 +287,26 @@ int hamt_size(hamt_t *trie) {
 }
 
 
-// return true if physical size of the tree increased
+// return true if original_kv should be freed
 bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_kv) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
 
     // Turn root into sentinel on first insert
-    if (trie->size == 0)
-        trie->root->leaf.key = key;
-
-    inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn, original_kv);
-
     if (trie->size == 0) {
+        //trie->root->leaf.key = key;
+        trie->root->leaf.key = key;
+        trie->root->leaf.value = value;
         trie->size = 1;
         return false;
     }
 
+    inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn, original_kv);
+
     if (inserted)
         trie->size ++;
 
-    return inserted;
+    return !inserted;
 }
 
 

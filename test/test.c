@@ -29,7 +29,8 @@ static char *test_create() {
 static char *test_big() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
 
-    for (int i = 0; i < 10000; i++) {
+    int n = 5000000;
+    for (int i = 0; i < n; i++) {
         thing_t *key = (thing_t*) malloc(sizeof(thing_t));
         thing_t *value = (thing_t*) malloc(sizeof(thing_t));
 
@@ -38,27 +39,27 @@ static char *test_big() {
         key->len = sizeof(int);
 
         value->x = (void*) malloc(sizeof(int));
-        *((int*) value->x) = i * i;
+        *((int*) value->x) = i * i + 10;
         value->len = sizeof(int);
 
         key_value_t original;
         bool size_increased = hamt_set(h, key, value, &original);
-        if (!size_increased) {
-            //free(original.key->x);
-            //free(original.key);
-            //free(original.value->x);
-            //free(original.value);
+        if (size_increased) {
+            free(original.key->x);
+            free(original.key);
+            free(original.value->x);
+            free(original.value);
         }
 
-        #ifdef DEBUG
-        hamt_print(h);
-        printf("size: %d\n", hamt_size(h));
-        #endif
 
         mu_assert("error, size does not match in big test", hamt_size(h) == i + 1);
     }
 
-    mu_assert("error, size does not match in big test", hamt_size(h) == 10000);
+    #ifdef DEBUG
+    //hamt_print(h);
+    #endif
+
+    mu_assert("error, size does not match in big test", hamt_size(h) == n);
 
     hamt_destroy(h);
 
@@ -177,9 +178,9 @@ static char *test_hamta2() {
 static char *all_tests() {
     mu_suite_start();
 
-    mu_run_test(test_create);
-    mu_run_test(test_search_destroy);
-    mu_run_test(test_hamta2);
+    //mu_run_test(test_create);
+    //mu_run_test(test_search_destroy);
+    //mu_run_test(test_hamta2);
     mu_run_test(test_big);
 
     return NULL;
