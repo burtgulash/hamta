@@ -1,5 +1,5 @@
 from cpython cimport Py_INCREF, Py_DECREF, PyObject
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.string cimport memcpy
 cimport c_hamta
 
@@ -15,14 +15,14 @@ cdef class Hamt:
         return c_hamta.hamt_size(self._c_hamt)
 
     def __setitem__(self, int key, int value):
-        cdef c_hamta.thing_t* k = <c_hamta.thing_t*> malloc(sizeof(c_hamta.thing_t))
-        cdef c_hamta.thing_t* v = <c_hamta.thing_t*> malloc(sizeof(c_hamta.thing_t))
+        cdef c_hamta.thing_t* k = <c_hamta.thing_t*> PyMem_Malloc(sizeof(c_hamta.thing_t))
+        cdef c_hamta.thing_t* v = <c_hamta.thing_t*> PyMem_Malloc(sizeof(c_hamta.thing_t))
         if not k or not v:
             raise MemoryError()
 
-        cdef void* k_mem = <void*> malloc(sizeof(int))
-        cdef void* v_mem = <void*> malloc(sizeof(int))
-        if not k_mem or v_mem:
+        cdef void* k_mem = <void*> PyMem_Malloc(sizeof(int))
+        cdef void* v_mem = <void*> PyMem_Malloc(sizeof(int))
+        if not k_mem or not v_mem:
             raise MemoryError()
 
         memcpy(k_mem, &key, sizeof(int))
@@ -38,10 +38,12 @@ cdef class Hamt:
         cdef bint replaced_old_value = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
 
         if replaced_old_value:
-            free(original_kv.key.x)
-            free(original_kv.key)
-            free(original_kv.value.x)
-            free(original_kv.value)
+            PyMem_Free(original_kv.key.x)
+            PyMem_Free(original_kv.key)
+            PyMem_Free(original_kv.value.x)
+            PyMem_Free(original_kv.value)
+
+    #def __getitem__(self,
 
 
     def __dealloc__(self):
