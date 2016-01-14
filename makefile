@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -O3 -Wall -Wextra -Wshadow
+CFLAGS=-std=c99 -O3
 SRC=$(wildcard lib/*.c)
 INCLUDE=-I./include
 
@@ -7,10 +7,10 @@ INCLUDE=-I./include
 
 bin/libhamta.so: $(SRC)
 	mkdir -p bin
-	$(CC) $(INCLUDE) -shared -fpic -o $@ $^ $(CFLAGS)
+	$(CC) $(INCLUDE) -shared -fpic -o $@ $^ $(CFLAGS) -Wall -Wextra -Wshadow
 
 bin/test_runner: test/test.c bin/libhamta.so
-	$(CC) $(INCLUDE) -L./bin -Wl,-rpath=./bin -o $@ $< -lhamta $(CFLAGS) -DDEBUG
+	$(CC) $(INCLUDE) -L./bin -Wl,-rpath=./bin -o $@ $< -lhamta $(CFLAGS)
 
 test: bin/test_runner
 	./bin/test_runner

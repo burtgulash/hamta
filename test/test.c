@@ -12,11 +12,11 @@ static char *test_create() {
     thing_t y = { .x="yy", .len=2 };
 
     hamt_insert(h, &x, &x);
-    //hamt_insert(h, &y, &y);
-    //hamt_insert(h, &x, &y);
-    //hamt_insert(h, &y, &x);
+    hamt_insert(h, &y, &y);
+    hamt_insert(h, &x, &y);
+    hamt_insert(h, &y, &x);
 
-    //hamt_remove(h, &x);
+    hamt_remove(h, &x);
 
     hamt_destroy(h);
 
