@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "minunit.h"
@@ -19,6 +20,45 @@ static char *test_create() {
     hamt_set(h, &y, &x, &original);
 
     hamt_remove(h, &x);
+
+    hamt_destroy(h);
+
+    return NULL;
+}
+
+static char *test_big() {
+    hamt_t *h = new_hamt(hamt_fnv1_hash);
+
+    for (int i = 0; i < 10000; i++) {
+        thing_t *key = (thing_t*) malloc(sizeof(thing_t));
+        thing_t *value = (thing_t*) malloc(sizeof(thing_t));
+
+        key->x = (void*) malloc(sizeof(int));
+        *((int*) key->x) = i;
+        key->len = sizeof(int);
+
+        value->x = (void*) malloc(sizeof(int));
+        *((int*) value->x) = i * i;
+        value->len = sizeof(int);
+
+        key_value_t original;
+        bool size_increased = hamt_set(h, key, value, &original);
+        if (!size_increased) {
+            //free(original.key->x);
+            //free(original.key);
+            //free(original.value->x);
+            //free(original.value);
+        }
+
+        #ifdef DEBUG
+        hamt_print(h);
+        printf("size: %d\n", hamt_size(h));
+        #endif
+
+        mu_assert("error, size does not match in big test", hamt_size(h) == i + 1);
+    }
+
+    mu_assert("error, size does not match in big test", hamt_size(h) == 10000);
 
     hamt_destroy(h);
 
@@ -140,6 +180,7 @@ static char *all_tests() {
     mu_run_test(test_create);
     mu_run_test(test_search_destroy);
     mu_run_test(test_hamta2);
+    mu_run_test(test_big);
 
     return NULL;
 }

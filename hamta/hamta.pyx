@@ -35,15 +35,26 @@ cdef class Hamt:
         v.len = sizeof(int)
 
         cdef c_hamta.key_value_t original_kv
-        cdef bint replaced_old_value = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
+        cdef bint size_increased = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
 
-        if replaced_old_value:
-            PyMem_Free(original_kv.key.x)
+        if size_increased:
+            #PyMem_Free(original_kv.key.x)
             PyMem_Free(original_kv.key)
-            PyMem_Free(original_kv.value.x)
+            #PyMem_Free(original_kv.value.x)
             PyMem_Free(original_kv.value)
 
-    #def __getitem__(self,
+    def __getitem__(self, int key):
+        cdef void* mem = <void*> PyMem_Malloc(sizeof(int))
+        cdef c_hamta.thing_t key_thing
+        key_thing.x = mem
+        key_thing.len = sizeof(int)
+
+        cdef c_hamta.thing_t* value = c_hamta.hamt_search(self._c_hamt, &key_thing)
+        PyMem_Free(mem)
+
+        if value is NULL:
+            raise KeyError("Item with key %s not found!" % key)
+        return <int> value.x
 
 
     def __dealloc__(self):

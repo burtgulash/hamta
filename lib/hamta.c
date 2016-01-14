@@ -285,7 +285,7 @@ int hamt_size(hamt_t *trie) {
 }
 
 
-// return true if original_kv key and value needs to be deallocated
+// return true if physical size of the tree increased
 bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_kv) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
@@ -304,7 +304,7 @@ bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_
     if (inserted)
         trie->size ++;
 
-    return !inserted;
+    return inserted;
 }
 
 

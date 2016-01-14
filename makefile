@@ -9,8 +9,9 @@ bin/libhamta.so: $(SRC)
 	mkdir -p bin
 	$(CC) $(INCLUDE) -shared -fpic -o $@ $^ $(CFLAGS) -Wall -Wextra -Wshadow
 
-bin/test_runner: test/test.c bin/libhamta.so
-	$(CC) $(INCLUDE) -L./bin -Wl,-rpath=./bin -o $@ $< -lhamta $(CFLAGS) -DDEBUG
+bin/test_runner: test/test.c $(SRC)
+	mkdir -p bin
+	$(CC) $(INCLUDE) -o $@ $^ $(CFLAGS) -DDEBUG -ggdb
 
 test: bin/test_runner
 	./bin/test_runner
