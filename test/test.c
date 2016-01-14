@@ -34,13 +34,15 @@ static char *test_big() {
         thing_t *key = (thing_t*) malloc(sizeof(thing_t));
         thing_t *value = (thing_t*) malloc(sizeof(thing_t));
 
-        int v = i % (n / 1337) + 1;
+        int k = i % (n / 1337) + 1;
+        int v = i * i + 10;
+
         key->x = (void*) malloc(sizeof(int));
-        *((int*) key->x) = v;
+        *((int*) key->x) = k;
         key->len = sizeof(int);
 
         value->x = (void*) malloc(sizeof(int));
-        *((int*) value->x) = i * i + 10;
+        *((int*) value->x) = v;
         value->len = sizeof(int);
 
         key_value_t original;
@@ -51,6 +53,9 @@ static char *test_big() {
             free(original.value->x);
             free(original.value);
         }
+
+        thing_t *found = hamt_search(h, key);
+        mu_assert("value inserted and retrieved don't match!", *((int*) found->x) == v);
     }
 
     hamt_destroy(h);

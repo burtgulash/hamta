@@ -35,7 +35,7 @@ cdef class Hamt:
         v.len = sizeof(int)
 
         cdef c_hamta.key_value_t original_kv
-        cdef bint delete_ld = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
+        cdef bint delete_old = c_hamta.hamt_set(self._c_hamt, k, v, &original_kv)
 
         if delete_old:
             PyMem_Free(original_kv.key.x)
@@ -45,6 +45,8 @@ cdef class Hamt:
 
     def __getitem__(self, int key):
         cdef void* mem = <void*> PyMem_Malloc(sizeof(int))
+        memcpy(mem, &key, sizeof(int))
+
         cdef c_hamta.thing_t key_thing
         key_thing.x = mem
         key_thing.len = sizeof(int)
@@ -54,7 +56,7 @@ cdef class Hamt:
 
         if value is NULL:
             raise KeyError("Item with key %s not found!" % key)
-        return <int> value.x
+        return (<int*> value.x)[0]
 
 
     def __dealloc__(self):
