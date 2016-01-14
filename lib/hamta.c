@@ -277,7 +277,7 @@ int hamt_size(hamt_t *trie) {
     return trie->size;
 }
 
-void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
+bool hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
 
@@ -291,6 +291,8 @@ void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
 
     if (inserted)
         trie->size++;
+
+    return inserted;
 }
 
 thing_t *hamt_search(hamt_t *trie, thing_t *key) {
