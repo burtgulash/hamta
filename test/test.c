@@ -11,11 +11,12 @@ static char *test_create() {
 
     thing_t x = { .x="x", .len=1 };
     thing_t y = { .x="yy", .len=2 };
+    key_value_t original;
 
-    hamt_insert(h, &x, &x);
-    hamt_insert(h, &y, &y);
-    hamt_insert(h, &x, &y);
-    hamt_insert(h, &y, &x);
+    hamt_set(h, &x, &x, &original);
+    hamt_set(h, &y, &y, &original);
+    hamt_set(h, &x, &y, &original);
+    hamt_set(h, &y, &x, &original);
 
     hamt_remove(h, &x);
 
@@ -37,15 +38,16 @@ static char *test_search_destroy() {
     thing_t b = { .x = "b", .len = 1 };
     thing_t bubakov = { .x = "bubakov", .len = 7 };
 
-    hamt_insert(h, &aut, &aut);
-    hamt_insert(h, &bus, &bus);
-    hamt_insert(h, &vlak, &vlak);
-    hamt_insert(h, &kokos, &kokos);
-    hamt_insert(h, &banan, &banan);
-    hamt_insert(h, &losos, &losos);
-    hamt_insert(h, &bro, &bro);
-    hamt_insert(h, &b, &b);
-    hamt_insert(h, &bubakov, &bubakov);
+    key_value_t original;
+    hamt_set(h, &aut, &aut, &original);
+    hamt_set(h, &bus, &bus, &original);
+    hamt_set(h, &vlak, &vlak, &original);
+    hamt_set(h, &kokos, &kokos, &original);
+    hamt_set(h, &banan, &banan, &original);
+    hamt_set(h, &losos, &losos, &original);
+    hamt_set(h, &bro, &bro, &original);
+    hamt_set(h, &b, &b, &original);
+    hamt_set(h, &bubakov, &bubakov, &original);
 
     int num_elements = 9;
     mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
@@ -111,12 +113,13 @@ static char *test_hamta2() {
                     {.x="x",        .len=1},
                     {.x="__x__",    .len=5} };
 
+    key_value_t original;
     int len = sizeof(z) / sizeof(thing_t);
     for (int i = 0; i < len; i++) {
         #ifdef DEBUG
         hamt_print(h);
         #endif
-        hamt_insert(h, &z[i], &z[i]);
+        hamt_set(h, &z[i], &z[i], &original);
     }
     #ifdef DEBUG
     hamt_print(h);

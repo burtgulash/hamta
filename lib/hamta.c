@@ -100,7 +100,7 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
 
 // return true if size of the tree increases after inserting
 bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value, hash_fn_t hash_fn,
-                                                                                       key_value_t *original_kv) {
+                                                                                   key_value_t *original_kv) {
     if (lvl * CHUNK_SIZE > 32) {
         assert(false); // TODO make conflict arrays at the floor of the tree
         return false;
@@ -285,7 +285,7 @@ int hamt_size(hamt_t *trie) {
 }
 
 
-key_value_t *_hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
+bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_kv) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
 
@@ -293,13 +293,7 @@ key_value_t *_hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     if (trie->size == 0)
         trie->root->leaf.key = key;
 
-    key_value_t *original_kv = (key_value_t*) malloc(sizeof(key_value_t));
     inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn, original_kv);
-
-    if (trie->size == 0 || inserted) {
-        free(original_kv);
-        original_kv = NULL;
-    }
 
     if (trie->size == 0)
         // on first insert it always succeeds, because it only overrides the sentinel node
@@ -308,17 +302,7 @@ key_value_t *_hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     if (inserted)
         trie->size++;
 
-    return original_kv;
-}
-
-void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
-    key_value_t *original_kv = _hamt_insert(trie, key, value);
-    if (original_kv != NULL)
-        free(original_kv);
-}
-
-key_value_t *hamt_update(hamt_t *trie, thing_t *key, thing_t *value) {
-    return _hamt_insert(trie, key, value);
+    return inserted;
 }
 
 
