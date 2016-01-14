@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "minunit.h"
 #include "hamta.h"
@@ -11,10 +12,19 @@ static char *test_create() {
     thing_t x = { .x="x", .len=1 };
     thing_t y = { .x="yy", .len=2 };
 
-    hamt_insert(h, &x, &x);
-    hamt_insert(h, &y, &y);
-    hamt_insert(h, &x, &y);
-    hamt_insert(h, &y, &x);
+    bool inserted = false;
+
+    inserted = hamt_insert(h, &x, &x);
+    mu_assert("error, inserted should be true", inserted == true);
+
+    inserted = hamt_insert(h, &y, &y);
+    mu_assert("error, inserted should be true", inserted == true);
+
+    inserted = hamt_insert(h, &x, &y);
+    mu_assert("error, inserted should be false", inserted == false);
+
+    inserted = hamt_insert(h, &y, &x);
+    mu_assert("error, inserted should be false", inserted == false);
 
     hamt_remove(h, &x);
 

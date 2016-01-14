@@ -319,7 +319,6 @@ bool hamt_remove(hamt_t *trie, thing_t *key) {
     if (removed)
         trie->size--;
 
-
     return removed;
 }
 
