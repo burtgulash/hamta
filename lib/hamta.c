@@ -231,15 +231,24 @@ bool hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key) {
     return removed;
 }
 
-void hamt_node_destroy(hamt_node_t *node) {
+void hamt_node_destroy(hamt_node_t *node, int lvl, bool free_things, bool free_values) {
     if (!is_leaf(node)) {
         hamt_node_t *children = get_children_pointer(node);
 
         int children_size = __builtin_popcount(node->sub.bitmap);
         for (int i = 0; i < children_size; i++)
-            hamt_node_destroy(&children[i]);
+            hamt_node_destroy(&children[i], lvl + 1, free_things, free_values);
 
         free(children);
+    } else if (lvl > 0) {
+        if (free_values) {
+            free(node->leaf.key->x);
+            free(node->leaf.value->x);
+        }
+        if (free_things) {
+            free(node->leaf.key);
+            free(node->leaf.value);
+        }
     }
 }
 
@@ -334,8 +343,8 @@ bool hamt_remove(hamt_t *trie, thing_t *key) {
     return removed;
 }
 
-void hamt_destroy(hamt_t *trie) {
-    hamt_node_destroy(trie->root);
+void hamt_destroy(hamt_t *trie, bool free_things, bool free_values) {
+    hamt_node_destroy(trie->root, 0, free_things, free_values);
     free(trie->root);
     free(trie);
 }

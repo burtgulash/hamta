@@ -6,9 +6,16 @@
 #include "hamta.h"
 
 
-static char *test_create() {
+static char *test_empty() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
     mu_assert("error, hamt not initialized", h != NULL);
+    hamt_destroy(h, true, true);
+
+    return NULL;
+}
+
+static char *test_create() {
+    hamt_t *h = new_hamt(hamt_fnv1_hash);
 
     thing_t x = { .x="x", .len=1 };
     thing_t y = { .x="yy", .len=2 };
@@ -21,7 +28,7 @@ static char *test_create() {
 
     hamt_remove(h, &x);
 
-    hamt_destroy(h);
+    hamt_destroy(h, false, false);
 
     return NULL;
 }
@@ -29,7 +36,7 @@ static char *test_create() {
 static char *test_big() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
 
-    int n = 200000;
+    int n = 20000;
     for (int i = 0; i < n; i++) {
         thing_t *key = (thing_t*) malloc(sizeof(thing_t));
         thing_t *value = (thing_t*) malloc(sizeof(thing_t));
@@ -58,7 +65,7 @@ static char *test_big() {
         mu_assert("value inserted and retrieved don't match!", *((int*) found->x) == v);
     }
 
-    hamt_destroy(h);
+    hamt_destroy(h, true, true);
 
     return NULL;
 }
@@ -130,7 +137,7 @@ static char *test_search_destroy() {
         mu_assert("error, hamt size doesn't match after removal", hamt_size(h) == --num_elements);
     }
 
-    hamt_destroy(h);
+    hamt_destroy(h, false, false);
 
     return NULL;
 }
@@ -165,7 +172,7 @@ static char *test_hamta2() {
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == len);
 
-    hamt_destroy(h);
+    hamt_destroy(h, false, false);
 
     return NULL;
 }
@@ -175,6 +182,7 @@ static char *test_hamta2() {
 static char *all_tests() {
     mu_suite_start();
 
+    mu_run_test(test_empty);
     mu_run_test(test_create);
     mu_run_test(test_search_destroy);
     mu_run_test(test_hamta2);

@@ -61,5 +61,5 @@ cdef class Hamt:
 
     def __dealloc__(self):
         if self._c_hamt is not NULL:
-            c_hamta.hamt_destroy(self._c_hamt)
+            c_hamta.hamt_destroy(self._c_hamt, 1, 1)
 

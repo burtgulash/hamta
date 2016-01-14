@@ -34,7 +34,7 @@ int hamt_size(hamt_t *trie);
 bool hamt_set(hamt_t *trie, thing_t *key, thing_t *value, key_value_t *original_kv);
 thing_t *hamt_search(hamt_t *trie, thing_t *key);
 bool hamt_remove(hamt_t *trie, thing_t *key);
-void hamt_destroy(hamt_t *trie);
+void hamt_destroy(hamt_t *trie, bool free_things, bool free_values);
 void hamt_print(hamt_t *trie);
 
 #endif
