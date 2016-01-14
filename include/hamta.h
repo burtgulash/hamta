@@ -1,5 +1,6 @@
 #ifndef HAMTA_H
 #define HAMTA_H
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 

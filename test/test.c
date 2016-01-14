@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "include/minunit.h"
+#include "minunit.h"
 #include "hamta.h"
 
 
