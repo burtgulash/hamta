@@ -98,7 +98,9 @@ key_value_t* hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, thing_t
     return NULL;
 }
 
-bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value, hash_fn_t hash_fn) {
+// return true if size of the tree increases after inserting
+bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, thing_t *value, hash_fn_t hash_fn,
+                                                                                       key_value_t *original_kv) {
     if (lvl * CHUNK_SIZE > 32) {
         assert(false); // TODO make conflict arrays at the floor of the tree
         return false;
@@ -106,9 +108,14 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 
     if (is_leaf(node)) {
         if (thing_equals(node->leaf.key, key)) {
+            // copy old values to original_kv struct
+            original_kv->key = node->leaf.key;
+            original_kv->value = node->leaf.value;
+
+            node->leaf.key = key;
             node->leaf.value = value;
+
             return false;
-            // TODO add update flag as a function argument
         }
 
         uint32_t original_hash = hash_fn(node->leaf.key->x, node->leaf.key->len);
@@ -122,7 +129,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
         node->sub.bitmap = 1 << original_next_symbol;
         node->sub.children = (hamt_node_t*) ((int) new_children | HAMT_NODE_T_FLAG);
 
-        return hamt_node_insert(node, hash, lvl, key, value, hash_fn);
+        return hamt_node_insert(node, hash, lvl, key, value, hash_fn, original_kv);
     }
 
     hamt_node_t *children = get_children_pointer(node);
@@ -132,7 +139,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, thing_t *key, t
 
     if (child_exists) {
         int child_position = __builtin_popcount(shifted >> 1);
-        return hamt_node_insert(&children[child_position], hash, lvl + 1, key, value, hash_fn);
+        return hamt_node_insert(&children[child_position], hash, lvl + 1, key, value, hash_fn, original_kv);
     } else {
         // case: free node
 
@@ -277,7 +284,8 @@ int hamt_size(hamt_t *trie) {
     return trie->size;
 }
 
-bool hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
+
+key_value_t *_hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     uint32_t hash = trie->hash_fn(key->x, key->len);
     bool inserted = false;
 
@@ -285,15 +293,34 @@ bool hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
     if (trie->size == 0)
         trie->root->leaf.key = key;
 
-    inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn);
+    key_value_t *original_kv = (key_value_t*) malloc(sizeof(key_value_t));
+    inserted = hamt_node_insert(trie->root, hash, 0, key, value, trie->hash_fn, original_kv);
+
+    if (trie->size == 0 || inserted) {
+        free(original_kv);
+        original_kv = NULL;
+    }
+
     if (trie->size == 0)
+        // on first insert it always succeeds, because it only overrides the sentinel node
         inserted = true;
 
     if (inserted)
         trie->size++;
 
-    return inserted;
+    return original_kv;
 }
+
+void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value) {
+    key_value_t *original_kv = _hamt_insert(trie, key, value);
+    if (original_kv != NULL)
+        free(original_kv);
+}
+
+key_value_t *hamt_update(hamt_t *trie, thing_t *key, thing_t *value) {
+    return _hamt_insert(trie, key, value);
+}
+
 
 thing_t *hamt_search(hamt_t *trie, thing_t *key) {
     uint32_t hash = trie->hash_fn(key->x, key->len);

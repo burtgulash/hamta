@@ -31,7 +31,8 @@ typedef struct {
 
 hamt_t *new_hamt(hash_fn_t hash_fn);
 int hamt_size(hamt_t *trie);
-bool hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
+void hamt_insert(hamt_t *trie, thing_t *key, thing_t *value);
+key_value_t *hamt_update(hamt_t *trie, thing_t *key, thing_t *value);
 thing_t *hamt_search(hamt_t *trie, thing_t *key);
 bool hamt_remove(hamt_t *trie, thing_t *key);
 void hamt_destroy(hamt_t *trie);
