@@ -1,4 +1,6 @@
 # HAMTa - Hash Array Mapped Trie
 
-* in C with Cython wrapper
-* work in progress
+* implementation in C - optimized for 32bit architecture
+* Cython wrapper included (only for ints now)
+* tested on armv7 Chromebook
+    * Performance is not better than python dict timewise nor memorywise
