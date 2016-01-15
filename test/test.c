@@ -97,7 +97,7 @@ static char *test_create() {
 
     bool removed = hamt_remove(h, x, &conflict_kv);
     if (removed) {
-        // pass
+        // don't deallocate, it was allocated on stack
     }
 
     hamt_destroy(h, false);
@@ -105,80 +105,75 @@ static char *test_create() {
     return NULL;
 }
 
-/*
+#define MK_STRING(text) char *(text) = #text; num_elements++
 
 static char *test_search_destroy() {
-    hamt_t *h = new_hamt(hamt_fnv1_hash);
+    hamt_t *h = new_hamt(hamt_str_hash, hamt_str_equals);
 
-    thing_t aut = { .x = "aut", .len = 3 };
-    thing_t bus = { .x = "bus", .len = 3 };
-    thing_t vlak = { .x = "vlak", .len = 4 };
-    thing_t kokos = { .x = "kokos", .len = 5 };
-    thing_t banan = { .x = "banan", .len = 5 };
-    thing_t losos = { .x = "losos", .len = 5 };
-    thing_t bro = { .x = "bro", .len = 3 };
-    thing_t b = { .x = "b", .len = 1 };
-    thing_t bubakov = { .x = "bubakov", .len = 7 };
+    int num_elements;
 
-    key_value_t original;
-    hamt_set(h, &aut, &aut, &original);
-    hamt_set(h, &bus, &bus, &original);
-    hamt_set(h, &vlak, &vlak, &original);
-    hamt_set(h, &kokos, &kokos, &original);
-    hamt_set(h, &banan, &banan, &original);
-    hamt_set(h, &losos, &losos, &original);
-    hamt_set(h, &bro, &bro, &original);
-    hamt_set(h, &b, &b, &original);
-    hamt_set(h, &bubakov, &bubakov, &original);
+    MK_STRING(aut);
+    MK_STRING(bus);
+    MK_STRING(vlak);
+    MK_STRING(kokos);
+    MK_STRING(banan);
+    MK_STRING(losos);
+    MK_STRING(bro);
+    MK_STRING(b);
+    MK_STRING(bubakov);
 
-    int num_elements = 9;
-    mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
+    key_value_t conflict_kv;
+    hamt_set(h, aut, aut, &conflict_kv);
+    hamt_set(h, bus, bus, &conflict_kv);
+    hamt_set(h, vlak, vlak, &conflict_kv);
+    hamt_set(h, kokos, kokos, &conflict_kv);
+    hamt_set(h, banan, banan, &conflict_kv);
+    hamt_set(h, losos, losos, &conflict_kv);
+    hamt_set(h, bro, bro, &conflict_kv);
+    hamt_set(h, b, b, &conflict_kv);
+    hamt_set(h, bubakov, bubakov, &conflict_kv);
 
-    thing_t *found;
-    thing_t *searching_for, *removing;
-    thing_t *s[] = {&losos, &bus, &aut, &vlak, &banan, &kokos, &bro, &b, &bubakov};
+    mu_assert("error, hamt size doesn't match 1", hamt_size(h) == num_elements);
+
+    char *found;
+    char *searching_for, *removing;
+    char *s[] = {losos, bus, aut, vlak, banan, kokos, bro, b, bubakov};
     bool removed = false;
-    int len = sizeof(s) / sizeof(thing_t*);
+    int len = sizeof(s) / sizeof(char*);
 
     DEBUG_PRINT("\nSEARCHING FOR %d ELEMENTS\n", len);
-    #ifdef DEBUG
-    hamt_print(h);
-    #endif
     for (int i = 0; i < len; i++) {
         searching_for = s[i];
-        DEBUG_PRINT("searching for key %s\n", (char*) searching_for->x);
+        DEBUG_PRINT("searching for key %s\n", (char*) searching_for);
         found = hamt_search(h, searching_for);
 
         mu_assert("error, not found", found != NULL);
-        mu_assert("error, didn't find the correct key", (strcmp(found->x, searching_for->x)) == 0);
+        mu_assert("error, didn't find the correct key", (strcmp(found, searching_for)) == 0);
     }
 
     // Now remove the elements
     mu_assert("error, hamt size doesn't match", hamt_size(h) == num_elements);
 
     DEBUG_PRINT("\nREMOVING %d ELEMENTS\n", len);
-    #ifdef DEBUG
-    hamt_print(h);
-    #endif
     for (int i = 0; i < len; i++) {
         removing = s[i];
-        DEBUG_PRINT("removing key %s\n", (char*) removing->x);
+        DEBUG_PRINT("removing key %s\n", (char*) removing);
 
-        removed = hamt_remove(h, removing);
+        key_value_t removed_kv;
+        removed = hamt_remove(h, removing, &removed_kv);
+
         mu_assert("error, returned element is NULL", removed == true);
-
-        #ifdef DEBUG
-        hamt_print(h);
-        #endif
-
         mu_assert("error, hamt size doesn't match after removal", hamt_size(h) == --num_elements);
     }
 
-    hamt_destroy(h, false, false);
+    hamt_destroy(h, false);
 
     return NULL;
 }
-*/
+
+char *to_str(void *x) {
+    return (char*) x;
+}
 
 static char *test_hamta2() {
     hamt_t *h = new_hamt(hamt_str_hash, hamt_str_equals);
@@ -194,18 +189,19 @@ static char *test_hamta2() {
                     "bubakov",
                     "korkodyl",
                     "x",
-                    "__x__" };
+                    "__x__",
+                    "y" };
 
     key_value_t conflict_kv;
     int len = sizeof(s) / sizeof(char*);
     for (int i = 0; i < len; i++) {
         #ifdef DEBUG
-        //hamt_print(h);
+        hamt_print(h, to_str);
         #endif
         hamt_set(h, s[i], s[i], &conflict_kv);
     }
     #ifdef DEBUG
-    //hamt_print(h);
+    hamt_print(h, to_str);
     #endif
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == len);
@@ -219,12 +215,12 @@ static char *test_hamta2() {
 static char *all_tests() {
     mu_suite_start();
 
-    mu_run_test(test_big2);
-    mu_run_test(test_big);
     mu_run_test(test_empty);
+    mu_run_test(test_big);
+    mu_run_test(test_big2);
     mu_run_test(test_create);
     mu_run_test(test_big);
-    //mu_run_test(test_search_destroy);
+    mu_run_test(test_search_destroy);
     mu_run_test(test_hamta2);
 
     return NULL;
