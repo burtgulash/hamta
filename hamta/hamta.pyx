@@ -38,6 +38,15 @@ cdef class Hamt:
         return (<int*> found.value)[0]
 
 
+    def __delitem__(self, int key):
+        cdef c_hamta.key_value_t removed_kv
+        cdef bint removed = c_hamta.hamt_remove(self._c_hamt, <void*> &key, &removed_kv)
+
+        if removed:
+            PyMem_Free(removed_kv.key)
+            PyMem_Free(removed_kv.value)
+
+
     def __dealloc__(self):
         if self._c_hamt is not NULL:
             c_hamta.hamt_destroy(self._c_hamt, PyMem_Free)
