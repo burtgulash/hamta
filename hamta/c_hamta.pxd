@@ -10,7 +10,7 @@ cdef extern from "hamta.h":
     bint hamt_int_equals(void* a, void* b)
 
     hamt_t* new_hamt(unsigned int(*hash_fn)(void* key), bint(*equals_fn)(void* a, void* b))
-    void hamt_destroy(hamt_t* h, bint free_values)
+    void hamt_destroy(hamt_t* h, void(*deallocate_fn)(void* ptr))
 
     int hamt_size(hamt_t* h)
     void* hamt_search(hamt_t* h, void* key)

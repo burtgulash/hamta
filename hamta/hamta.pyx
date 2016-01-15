@@ -30,6 +30,7 @@ cdef class Hamt:
             PyMem_Free(conflict_kv.key)
             PyMem_Free(conflict_kv.value)
 
+
     def __getitem__(self, int key):
         cdef void* value = c_hamta.hamt_search(self._c_hamt, <void*> &key)
         if value is NULL:
@@ -39,5 +40,5 @@ cdef class Hamt:
 
     def __dealloc__(self):
         if self._c_hamt is not NULL:
-            c_hamta.hamt_destroy(self._c_hamt, 1)
+            c_hamta.hamt_destroy(self._c_hamt, PyMem_Free)
 

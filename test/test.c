@@ -9,7 +9,7 @@
 static char *test_empty() {
     hamt_t *h = new_hamt(hamt_int_hash, hamt_int_equals);
     mu_assert("error, hamt not initialized", h != NULL);
-    hamt_destroy(h, true);
+    hamt_destroy(h, free);
 
     return NULL;
 }
@@ -39,7 +39,7 @@ static char *test_big() {
         mu_assert("value inserted and retrieved don't match!", *found == value);
     }
 
-    hamt_destroy(h, true);
+    hamt_destroy(h, free);
 
     return NULL;
 }
@@ -78,7 +78,7 @@ static char *test_big2() {
         }
     }
 
-    hamt_destroy(h, true);
+    hamt_destroy(h, free);
 
     return NULL;
 }
@@ -100,7 +100,7 @@ static char *test_create() {
         // don't deallocate, it was allocated on stack
     }
 
-    hamt_destroy(h, false);
+    hamt_destroy(h, NULL);
 
     return NULL;
 }
@@ -166,7 +166,7 @@ static char *test_search_destroy() {
         mu_assert("error, hamt size doesn't match after removal", hamt_size(h) == --num_elements);
     }
 
-    hamt_destroy(h, false);
+    hamt_destroy(h, NULL);
 
     return NULL;
 }
@@ -206,7 +206,7 @@ static char *test_hamta2() {
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == len);
 
-    hamt_destroy(h, false);
+    hamt_destroy(h, NULL);
 
     return NULL;
 }
