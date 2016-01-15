@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-uint32_t hamt_fnv1_hash(void *key, size_t len);
+uint32_t hamt_fnv1_int_hash(void *key);
 
 
 bool hamt_int_equals(void *a, void *b);

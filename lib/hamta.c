@@ -29,13 +29,15 @@ typedef union hamt_node_ {
 
 
 bool hamt_int_equals(void *a, void *b) {
-    return (unsigned int) a == (unsigned int) b;
+    if (a == NULL || b == NULL)
+        return a == b;
+    return memcmp(a, b, sizeof(int)) == 0;
 }
 
 // FNV-1 Hash function
-uint32_t hamt_fnv1_hash(void *key, size_t len) {
+uint32_t hamt_fnv1_int_hash(void *key) {
     uint32_t hash = 2166136261;
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0; i < sizeof(int); i++) {
         hash *= 16777619;
         hash ^= ((char*) key)[i];
     }
