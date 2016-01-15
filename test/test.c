@@ -44,6 +44,45 @@ static char *test_big() {
     return NULL;
 }
 
+static char *test_big2() {
+    hamt_t *h = new_hamt(hamt_int_hash, hamt_int_equals);
+
+    int n = 10000;
+    for (int i = 0; i < n; i++) {
+        int key = i % (n / 1531);
+        int value = i * i * i;
+
+        void *kmem = malloc(sizeof(int));
+        void *vmem = malloc(sizeof(int));
+
+        memcpy(kmem, (void*) &key, sizeof(int));
+        memcpy(vmem, (void*) &value, sizeof(int));
+
+        key_value_t conflict_kv;
+        bool conflict = hamt_set(h, kmem, vmem, &conflict_kv);
+        if (conflict) {
+            free(conflict_kv.key);
+            free(conflict_kv.value);
+        }
+
+        int *found = (int*) hamt_search(h, kmem);
+        mu_assert("value inserted and retrieved don't match!", *found == value);
+    }
+
+    for (int i = 0; i < n; i++) {
+        key_value_t removed_kv;
+        bool removed = hamt_remove(h, (void*) &i, &removed_kv);
+        if (removed) {
+            free(removed_kv.key);
+            free(removed_kv.value);
+        }
+    }
+
+    hamt_destroy(h, true);
+
+    return NULL;
+}
+
 static char *test_create() {
     hamt_t *h = new_hamt(hamt_str_hash, hamt_str_equals);
 
@@ -180,6 +219,8 @@ static char *test_hamta2() {
 static char *all_tests() {
     mu_suite_start();
 
+    mu_run_test(test_big2);
+    mu_run_test(test_big);
     mu_run_test(test_empty);
     mu_run_test(test_create);
     mu_run_test(test_big);
