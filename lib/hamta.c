@@ -34,12 +34,32 @@ bool hamt_int_equals(void *a, void *b) {
     return memcmp(a, b, sizeof(int)) == 0;
 }
 
+bool hamt_str_equals(void *a, void *b) {
+    if (a == NULL || b == NULL)
+        return a == b;
+    return strcmp(a, b) == 0;
+}
+
 // FNV-1 Hash function
-uint32_t hamt_fnv1_int_hash(void *key) {
+uint32_t hamt_fnv1_hash(void *key, size_t len) {
     uint32_t hash = 2166136261;
-    for (size_t i = 0; i < sizeof(int); i++) {
+    for (size_t i = 0; i < len; i++) {
         hash *= 16777619;
         hash ^= ((char*) key)[i];
+    }
+    return hash;
+}
+
+uint32_t hamt_int_hash(void *key) {
+    return hamt_fnv1_hash(key, sizeof(int));
+}
+
+// FNV-1 Hash function
+uint32_t hamt_str_hash(void *key) {
+    uint32_t hash = 2166136261;
+    for (; (char*) key != '\0'; key ++) {
+        hash *= 16777619;
+        hash ^= *(char*) key;
     }
     return hash;
 }

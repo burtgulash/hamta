@@ -7,7 +7,7 @@
 
 
 static char *test_empty() {
-    hamt_t *h = new_hamt(hamt_fnv1_int_hash, hamt_int_equals);
+    hamt_t *h = new_hamt(hamt_int_hash, hamt_int_equals);
     mu_assert("error, hamt not initialized", h != NULL);
     hamt_destroy(h, true);
 
@@ -15,7 +15,7 @@ static char *test_empty() {
 }
 
 static char *test_big() {
-    hamt_t *h = new_hamt(hamt_fnv1_int_hash, hamt_int_equals);
+    hamt_t *h = new_hamt(hamt_int_hash, hamt_int_equals);
 
     int n = 10000;
     for (int i = 0; i < n; i++) {
