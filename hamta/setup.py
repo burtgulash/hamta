@@ -7,8 +7,6 @@ extensions = [
               extra_compile_args=["-std=c99", "-O3"],
               include_dirs=["../include"],
         )
-        #library_dirs=["../bin"],
-        #runtime_library_dirs=["../bin"])
 ]
 
 setup(
