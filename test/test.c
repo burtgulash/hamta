@@ -44,26 +44,29 @@ static char *test_big() {
     return NULL;
 }
 
-/*
 static char *test_create() {
-    hamt_t *h = new_hamt(hamt_fnv1_hash);
+    hamt_t *h = new_hamt(hamt_str_hash, hamt_str_equals);
 
-    thing_t x = { .x="x", .len=1 };
-    thing_t y = { .x="yy", .len=2 };
-    key_value_t original;
+    char *x = "xx";
+    char *y = "yy";
 
-    hamt_set(h, &x, &x, &original);
-    hamt_set(h, &y, &y, &original);
-    hamt_set(h, &x, &y, &original);
-    hamt_set(h, &y, &x, &original);
+    key_value_t conflict_kv;
+    hamt_set(h, x, x, &conflict_kv);
+    hamt_set(h, y, y, &conflict_kv);
+    hamt_set(h, x, y, &conflict_kv);
+    hamt_set(h, y, x, &conflict_kv);
 
-    hamt_remove(h, &x);
+    bool removed = hamt_remove(h, x, &conflict_kv);
+    if (removed) {
+        // pass
+    }
 
-    hamt_destroy(h, false, false);
+    hamt_destroy(h, false);
 
     return NULL;
 }
 
+/*
 
 static char *test_search_destroy() {
     hamt_t *h = new_hamt(hamt_fnv1_hash);
@@ -136,52 +139,52 @@ static char *test_search_destroy() {
 
     return NULL;
 }
+*/
 
 static char *test_hamta2() {
-    hamt_t *h = new_hamt(hamt_fnv1_hash);
+    hamt_t *h = new_hamt(hamt_str_hash, hamt_str_equals);
 
-    thing_t z[] = { {.x="a",        .len=1},
-                    {.x="bb",       .len=2},
-                    {.x="auto",     .len=4},
-                    {.x="bus",      .len=3},
-                    {.x="vlak",     .len=4},
-                    {.x="kokos",    .len=5},
-                    {.x="banan",    .len=5},
-                    {.x="losos",    .len=5},
-                    {.x="bubakov",  .len=7},
-                    {.x="korkodyl", .len=8},
-                    {.x="x",        .len=1},
-                    {.x="__x__",    .len=5} };
+    char *s[] = {   "a",
+                    "bb",
+                    "auto",
+                    "bus",
+                    "vlak",
+                    "kokos",
+                    "banan",
+                    "losos",
+                    "bubakov",
+                    "korkodyl",
+                    "x",
+                    "__x__" };
 
-    key_value_t original;
-    int len = sizeof(z) / sizeof(thing_t);
+    key_value_t conflict_kv;
+    int len = sizeof(s) / sizeof(char*);
     for (int i = 0; i < len; i++) {
         #ifdef DEBUG
-        hamt_print(h);
+        //hamt_print(h);
         #endif
-        hamt_set(h, &z[i], &z[i], &original);
+        hamt_set(h, s[i], s[i], &conflict_kv);
     }
     #ifdef DEBUG
-    hamt_print(h);
+    //hamt_print(h);
     #endif
 
     mu_assert("error, hamt size doesn't match", hamt_size(h) == len);
 
-    hamt_destroy(h, false, false);
+    hamt_destroy(h, false);
 
     return NULL;
 }
-*/
 
 
 static char *all_tests() {
     mu_suite_start();
 
     mu_run_test(test_empty);
-    //mu_run_test(test_create);
-    //mu_run_test(test_search_destroy);
-    //mu_run_test(test_hamta2);
+    mu_run_test(test_create);
     mu_run_test(test_big);
+    //mu_run_test(test_search_destroy);
+    mu_run_test(test_hamta2);
 
     return NULL;
 }

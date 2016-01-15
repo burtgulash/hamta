@@ -57,7 +57,7 @@ uint32_t hamt_int_hash(void *key) {
 // FNV-1 Hash function
 uint32_t hamt_str_hash(void *key) {
     uint32_t hash = 2166136261;
-    for (; (char*) key != '\0'; key ++) {
+    for (; *(char*) key != 0; key ++) {
         hash *= 16777619;
         hash ^= *(char*) key;
     }
