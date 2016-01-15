@@ -329,13 +329,9 @@ bool hamt_set(hamt_t *trie, void *key, void *value, key_value_t *conflict_kv) {
 }
 
 
-void *hamt_search(hamt_t *trie, void *key) {
+key_value_t *hamt_search(hamt_t *trie, void *key) {
     uint32_t hash = trie->hash_fn(key);
-    key_value_t *found = hamt_node_search(trie->root, hash, 0, key, trie->equals_fn);
-    if (found != NULL)
-        return found->value;
-
-    return NULL;
+    return hamt_node_search(trie->root, hash, 0, key, trie->equals_fn);
 }
 
 bool hamt_remove(hamt_t *trie, void *key, key_value_t *removed_kv) {

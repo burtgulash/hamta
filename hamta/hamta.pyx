@@ -32,10 +32,10 @@ cdef class Hamt:
 
 
     def __getitem__(self, int key):
-        cdef void* value = c_hamta.hamt_search(self._c_hamt, <void*> &key)
-        if value is NULL:
+        cdef c_hamta.key_value_t* found = c_hamta.hamt_search(self._c_hamt, <void*> &key)
+        if found is NULL:
             raise KeyError("Item with key %s not found!" % key)
-        return (<int*> value)[0]
+        return (<int*> found.value)[0]
 
 
     def __dealloc__(self):

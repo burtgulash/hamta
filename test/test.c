@@ -35,8 +35,8 @@ static char *test_big() {
             free(conflict_kv.value);
         }
 
-        int *found = (int*) hamt_search(h, kmem);
-        mu_assert("value inserted and retrieved don't match!", *found == value);
+        key_value_t *found = hamt_search(h, kmem);
+        mu_assert("value inserted and retrieved don't match!", *(int*) found->value == value);
     }
 
     hamt_destroy(h, free);
@@ -65,8 +65,8 @@ static char *test_big2() {
             free(conflict_kv.value);
         }
 
-        int *found = (int*) hamt_search(h, kmem);
-        mu_assert("value inserted and retrieved don't match!", *found == value);
+        key_value_t *found = hamt_search(h, kmem);
+        mu_assert("value inserted and retrieved don't match!", *(int*) found->value == value);
     }
 
     for (int i = 0; i < n; i++) {
@@ -135,7 +135,7 @@ static char *test_search_destroy() {
 
     mu_assert("error, hamt size doesn't match 1", hamt_size(h) == num_elements);
 
-    char *found;
+    key_value_t *found;
     char *searching_for, *removing;
     char *s[] = {losos, bus, aut, vlak, banan, kokos, bro, b, bubakov};
     bool removed = false;
@@ -148,7 +148,7 @@ static char *test_search_destroy() {
         found = hamt_search(h, searching_for);
 
         mu_assert("error, not found", found != NULL);
-        mu_assert("error, didn't find the correct key", (strcmp(found, searching_for)) == 0);
+        mu_assert("error, didn't find the correct key", (strcmp(found->value, searching_for)) == 0);
     }
 
     // Now remove the elements

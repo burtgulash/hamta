@@ -13,6 +13,6 @@ cdef extern from "hamta.h":
     void hamt_destroy(hamt_t* h, void(*deallocate_fn)(void* ptr))
 
     int hamt_size(hamt_t* h)
-    void* hamt_search(hamt_t* h, void* key)
+    key_value_t* hamt_search(hamt_t* h, void* key)
     bint hamt_remove(hamt_t* h, void* key, key_value_t* removed_kv)
     bint hamt_set(hamt_t* h, void* key, void* value, key_value_t* conflict_kv)
