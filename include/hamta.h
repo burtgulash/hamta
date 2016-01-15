@@ -4,13 +4,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef uint32_t (*hash_fn_t)(void *key);
+typedef unsigned int (*hash_fn_t)(void *key);
 typedef bool (*equals_fn_t)(void *a, void *b);
 typedef char* (*str_fn_t)(void *a);
 typedef void (*deallocate_fn_t)(void *ptr);
 
-uint32_t hamt_int_hash(void *key);
-uint32_t hamt_str_hash(void *key);
+unsigned int hamt_int_hash(void *key);
+unsigned int hamt_str_hash(void *key);
 
 bool hamt_int_equals(void *a, void *b);
 bool hamt_str_equals(void *a, void *b);

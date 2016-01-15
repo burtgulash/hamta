@@ -1,22 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include "hamta.h"
 
-#define CHUNK_SIZE 5
+// detect 64 and 32 bit architectures
+#if UINTPTR_MAX > 0xffffffff
+    #define CHUNK_SIZE 6
+    #define FNV_BASE 14695981039346656037
+    #define FNV_PRIME 1099511628211
+#else
+    #define CHUNK_SIZE 5
+    #define FNV_BASE 2166136261
+    #define FNV_PRIME 16777619;
+#endif
 
-// do not change macro of these values!  objects's last bit will be set to 1 if
-// it has type hamt_node_t and 0 if key_value_t. This is possible since malloc
-// will align to some multiple of even number.
-#define KEY_VALUE_T_FLAG 0 // values can be NULL, so keep in this way
+
+#define KEY_VALUE_T_FLAG 0 // leaf.values can be NULL, so keep order of constants this way
 #define HAMT_NODE_T_FLAG 1
+
 
 
 union hamt_node_;
 typedef struct sub_node_ {
-    uint32_t bitmap;
+    unsigned int bitmap;
     union hamt_node_ *children;
 } sub_node_t;
 
@@ -41,38 +50,41 @@ bool hamt_str_equals(void *a, void *b) {
 }
 
 // FNV-1 Hash function
-uint32_t hamt_fnv1_hash(void *key, size_t len) {
-    uint32_t hash = 2166136261;
+unsigned int hamt_fnv1_hash(void *key, size_t len) {
+    unsigned int hash = FNV_BASE;
     for (size_t i = 0; i < len; i++) {
-        hash *= 16777619;
+        hash *= FNV_PRIME;
         hash ^= ((char*) key)[i];
     }
     return hash;
 }
 
-uint32_t hamt_int_hash(void *key) {
+unsigned int hamt_int_hash(void *key) {
     return hamt_fnv1_hash(key, sizeof(int));
 }
 
 // FNV-1 Hash function
-uint32_t hamt_str_hash(void *key) {
-    uint32_t hash = 2166136261;
+unsigned int hamt_str_hash(void *key) {
+    unsigned int hash = FNV_BASE;
     for (; *(char*) key != 0; key ++) {
-        hash *= 16777619;
+        hash *= FNV_PRIME;
         hash ^= *(char*) key;
     }
     return hash;
 }
 
 
-int hamt_get_symbol(uint32_t hash, int lvl) {
+int hamt_get_symbol(unsigned int hash, int lvl) {
     int left = lvl * CHUNK_SIZE;
     int left_plus_chunk = left + CHUNK_SIZE;
     int right = 32 - left_plus_chunk;
     if (left_plus_chunk > 32)
         right = 0;
 
-    uint32_t symbol = (hash << left) >> (right + left);
+    unsigned int symbol = hash << left;
+    // UINTPTR_MAX is 0xffffffff on 32bit and 0xffffffffffffffff
+    assert((symbol & UINTPTR_MAX) == symbol);
+    symbol >>= (right + left);
 
     assert(symbol < 32);
     return symbol;
@@ -91,7 +103,7 @@ bool is_leaf(hamt_node_t *node) {
 }
 
 // TODO return const key_value_t*
-key_value_t *hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, void *key, equals_fn_t equals_fn) {
+key_value_t *hamt_node_search(hamt_node_t *node, unsigned int hash, int lvl, void *key, equals_fn_t equals_fn) {
     assert(node != NULL);
 
     if (is_leaf(node)) {
@@ -100,7 +112,7 @@ key_value_t *hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, void *k
     } else {
         hamt_node_t *children = get_children_pointer(node);
         int symbol = hamt_get_symbol(hash, lvl);
-        uint32_t shifted = node->sub.bitmap >> symbol;
+        unsigned int shifted = node->sub.bitmap >> symbol;
         bool child_exists = shifted & 1;
 
         if (child_exists) {
@@ -115,7 +127,7 @@ key_value_t *hamt_node_search(hamt_node_t *node, uint32_t hash, int lvl, void *k
 }
 
 // return true if size of the tree increases after inserting
-bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, void *key, void *value,
+bool hamt_node_insert(hamt_node_t *node, unsigned int hash, int lvl, void *key, void *value,
                       hash_fn_t hash_fn, equals_fn_t equals_fn, key_value_t *conflict_kv) {
     if (lvl * CHUNK_SIZE > 32) {
         assert(false); // TODO make conflict arrays at the floor of the tree
@@ -135,7 +147,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, void *key, void
             return false;
         }
 
-        uint32_t original_hash = hash_fn(node->leaf.key);
+        unsigned int original_hash = hash_fn(node->leaf.key);
         int original_next_symbol = hamt_get_symbol(original_hash, lvl);
 
         hamt_node_t *new_children = (hamt_node_t*) malloc(sizeof(hamt_node_t) * 1);
@@ -151,7 +163,7 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, void *key, void
 
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
-    uint32_t shifted = (node->sub.bitmap) >> symbol;
+    unsigned int shifted = (node->sub.bitmap) >> symbol;
     bool child_exists = shifted & 1;
 
     if (child_exists) {
@@ -189,10 +201,10 @@ bool hamt_node_insert(hamt_node_t *node, uint32_t hash, int lvl, void *key, void
     }
 }
 
-bool hamt_node_remove(hamt_node_t *node, uint32_t hash, int lvl, void *key, equals_fn_t equals_fn, key_value_t *removed_kv) {
+bool hamt_node_remove(hamt_node_t *node, unsigned int hash, int lvl, void *key, equals_fn_t equals_fn, key_value_t *removed_kv) {
     hamt_node_t *children = get_children_pointer(node);
     int symbol = hamt_get_symbol(hash, lvl);
-    uint32_t shifted = (node->sub.bitmap) >> symbol;
+    unsigned int shifted = (node->sub.bitmap) >> symbol;
     bool child_exists = shifted & 1;
 
     bool removed = false;
@@ -310,7 +322,7 @@ int hamt_size(hamt_t *trie) {
 
 // return true if original_kv should be freed
 bool hamt_set(hamt_t *trie, void *key, void *value, key_value_t *conflict_kv) {
-    uint32_t hash = trie->hash_fn(key);
+    unsigned int hash = trie->hash_fn(key);
     bool inserted = false;
 
     if (trie->size == 0) {
@@ -330,12 +342,12 @@ bool hamt_set(hamt_t *trie, void *key, void *value, key_value_t *conflict_kv) {
 
 
 key_value_t *hamt_search(hamt_t *trie, void *key) {
-    uint32_t hash = trie->hash_fn(key);
+    unsigned int hash = trie->hash_fn(key);
     return hamt_node_search(trie->root, hash, 0, key, trie->equals_fn);
 }
 
 bool hamt_remove(hamt_t *trie, void *key, key_value_t *removed_kv) {
-    uint32_t hash = trie->hash_fn(key);
+    unsigned int hash = trie->hash_fn(key);
 
     if (trie->size == 0)
         return false;
